@@ -1,5 +1,16 @@
 # obsidian
 Team Obsidian - BWSI Design Challenge 2023
+Members: Anna, Ashley, Noah, Riley
+
+# goals
+* Bootloader
+* Host tools
+  * Bootloader - build tool - Noah
+  * Bootloader - emulate tool - Riley
+  * Firmware - bundle and protect tool - Ashley
+  * Firmware - update tool - Anna
+
+# to do
 
 # old docs
 ## running the insecure example
