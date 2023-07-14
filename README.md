@@ -1,5 +1,5 @@
 # obsidian
-Team Obsidian- BWSI Design Challenge 2023
+Team Obsidian - BWSI Design Challenge 2023
 
 # old docs
 ## running the insecure example
