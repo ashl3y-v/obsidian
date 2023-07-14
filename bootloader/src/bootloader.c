@@ -19,7 +19,7 @@
 void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
-long program_flash(uint32_t, unsigned char *, unsigned int);
+long program_flash(uint32_t, unsigned char*, unsigned int);
 
 // Firmware Constants
 #define METADATA_BASE                                                          \
@@ -42,9 +42,9 @@ extern int _binary_firmware_bin_start;
 extern int _binary_firmware_bin_size;
 
 // Device metadata
-uint16_t *fw_version_address = (uint16_t *)METADATA_BASE;
-uint16_t *fw_size_address = (uint16_t *)(METADATA_BASE + 2);
-uint8_t *fw_release_message_address;
+uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
+uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
+uint8_t* fw_release_message_address;
 
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
@@ -92,7 +92,7 @@ int main(void) {
  */
 void load_initial_firmware(void) {
 
-    if (*((uint32_t *)(METADATA_BASE)) != 0xFFFFFFFF) {
+    if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
         /*
          * Default Flash startup state is all FF since. Only load initial
          * firmware when metadata page is all FF. Thus, exit if there has
@@ -109,12 +109,12 @@ void load_initial_firmware(void) {
 
     // Get included initial firmware
     int size = (int)&_binary_firmware_bin_size;
-    uint8_t *initial_data = (uint8_t *)&_binary_firmware_bin_start;
+    uint8_t* initial_data = (uint8_t*)&_binary_firmware_bin_start;
 
     // Set version 2 and install
     uint16_t version = 2;
     uint32_t metadata = (((uint16_t)size & 0xFFFF) << 16) | (version & 0xFFFF);
-    program_flash(METADATA_BASE, (uint8_t *)(&metadata), 4);
+    program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
 
     int i;
 
@@ -132,7 +132,7 @@ void load_initial_firmware(void) {
     uint16_t rem_fw_bytes = size % FLASH_PAGESIZE;
     if (rem_fw_bytes == 0) {
         // No firmware left. Just write the release message
-        program_flash(FW_BASE + (i * FLASH_PAGESIZE), (uint8_t *)initial_msg,
+        program_flash(FW_BASE + (i * FLASH_PAGESIZE), (uint8_t*)initial_msg,
                       msg_len);
     } else {
         // Some firmware left. Determine how many bytes of release message can
@@ -157,7 +157,7 @@ void load_initial_firmware(void) {
             // Writing to a new page. Increment pointer
             i++;
             program_flash(FW_BASE + (i * FLASH_PAGESIZE),
-                          (uint8_t *)(initial_msg + (msg_len - rem_msg_bytes)),
+                          (uint8_t*)(initial_msg + (msg_len - rem_msg_bytes)),
                           rem_msg_bytes);
         }
     }
@@ -213,7 +213,7 @@ void load_firmware(void) {
     // Create 32 bit word for flash programming, version is at lower address,
     // size is at higher address
     uint32_t metadata = ((size & 0xFFFF) << 16) | (version & 0xFFFF);
-    program_flash(METADATA_BASE, (uint8_t *)(&metadata), 4);
+    program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
 
     uart_write(UART1, OK); // Acknowledge the metadata.
 
@@ -276,7 +276,7 @@ void load_firmware(void) {
  * This functions performs an erase of the specified flash page before writing
  * the data.
  */
-long program_flash(uint32_t page_addr, unsigned char *data,
+long program_flash(uint32_t page_addr, unsigned char* data,
                    unsigned int data_len) {
     uint32_t word = 0;
     int ret;
@@ -294,7 +294,7 @@ long program_flash(uint32_t page_addr, unsigned char *data,
         int num_full_bytes = data_len - rem;
 
         // Program up to the last word
-        ret = FlashProgram((unsigned long *)data, page_addr, num_full_bytes);
+        ret = FlashProgram((unsigned long*)data, page_addr, num_full_bytes);
         if (ret != 0) {
             return ret;
         }
@@ -313,15 +313,15 @@ long program_flash(uint32_t page_addr, unsigned char *data,
         return FlashProgram(&word, page_addr + num_full_bytes, 4);
     } else {
         // Write full buffer of 4-byte words
-        return FlashProgram((unsigned long *)data, page_addr, data_len);
+        return FlashProgram((unsigned long*)data, page_addr, data_len);
     }
 }
 
 void boot_firmware(void) {
     // compute the release message address, and then print it
     uint16_t fw_size = *fw_size_address;
-    fw_release_message_address = (uint8_t *)(FW_BASE + fw_size);
-    uart_write_str(UART2, (char *)fw_release_message_address);
+    fw_release_message_address = (uint8_t*)(FW_BASE + fw_size);
+    uart_write_str(UART2, (char*)fw_release_message_address);
 
     // Boot the firmware
     __asm("LDR R0,=0x10001\n\t"
