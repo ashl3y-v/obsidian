@@ -1,5 +1,5 @@
 # cobblestone
-BWSI Design Challenge 2023
+Team Bedrock - BWSI Design Challenge 2023
 
 # old docs
 ## running the insecure example
