@@ -27,10 +27,12 @@ from serial import Serial
 RESP_OK = b'\x00'
 FRAME_SIZE = 16
 
-
 def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack_from('<HH', metadata)
-    print(f'Version: {version}\nSize: {size} bytes\n')
+    print(f'Version: {version}\n')
+
+    if version & debug==False:
+        raise RuntimeError("ERROR: Attempted to install illegal firmware version.".format(repr(resp)))
 
     # Handshake for update
     ser.write(b'U')
@@ -56,6 +58,8 @@ def send_frame(ser, frame, debug=False):
 
     if debug:
         print(frame)
+
+    time.sleep(0.1)
 
     resp = ser.read()  # Wait for an OK from the bootloader
 
@@ -95,7 +99,7 @@ def main(ser, infile, debug):
 
     print("Done writing firmware.")
 
-    # Send a zero length payload to tell the bootlader to finish writing it's page.
+    # Send a zero length payload to tell the bootlader to finish writing its page.
     ser.write(struct.pack('>H', 0x0000))
 
     return ser
