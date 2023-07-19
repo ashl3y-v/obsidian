@@ -29,10 +29,7 @@ FRAME_SIZE = 16
 
 def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack_from('<HH', metadata)
-    print(f'Version: {version}\n')
-
-    if version & debug==False:
-        raise RuntimeError("ERROR: Attempted to install illegal firmware version.".format(repr(resp)))
+    print(f'Request to install version {version}\n')
 
     # Handshake for update
     ser.write(b'U')
