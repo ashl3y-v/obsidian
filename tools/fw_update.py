@@ -94,8 +94,12 @@ def main(ser, infile, debug):
         print("Invalid signature, aborting.")
         return ser
 
-    
+    ## Proceed to sending data.
+
+    # Send metadata.
     send_metadata(ser, metadata, debug=debug)
+
+    # Send firmware in frames.
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start: frame_start + FRAME_SIZE]
 
