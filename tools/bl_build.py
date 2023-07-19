@@ -1,62 +1,65 @@
 #!/usr/bin/env python
-"""
-Bootloader Build Tool
 
-This tool is responsible for building the bootloader from source and copying
-the build outputs into the host tools directory for programming.
 """
+bl_build.py --initial-firmware <binary_path>
+
+This tool is responsible for setting up the firmware location and compiling C source code to generate a bootloader binary file.
+"""
+
 import argparse
 import os
 import pathlib
 import shutil
-import subprocess
+from subprocess import run
 
-FILE_DIR = pathlib.Path(__file__).parent.absolute()
+TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
-
-def copy_initial_firmware(binary_path):
-    """
-    Copy the initial firmware binary to the bootloader build directory
-    Return:
-        None
-    """
-    # Change into directory containing tools
-    os.chdir(FILE_DIR)
-    bootloader = FILE_DIR / '..' / 'bootloader'
-    shutil.copy(binary_path, bootloader / 'src' / 'firmware.bin')
-
-
-def make_bootloader():
-    """
-    Build the bootloader from source.
-
-    Return:
-        True if successful, False otherwise.
-    """
-    # Change into directory containing bootloader.
-    bootloader = FILE_DIR / '..' / 'bootloader'
+def compile_bootloader() -> bool:
+    # Navigate to bootloader directory
+    bootloader = TOOL_DIRECTORY / '..' / 'bootloader'
     os.chdir(bootloader)
 
-    subprocess.call('make clean', shell=True)
-    status = subprocess.call('make')
+    # Delete any previous executables and compile
+    run('make clean', shell=True)
 
-    # Return True if make returned 0, otherwise return False.
-    return (status == 0)
+    # Did our compilation succeed
+    return run("make") == 0
 
+def copy_firmware(firmware_path: str) -> None:
+    # Navigate to our tool directory
+    os.chdir(TOOL_DIRECTORY)
+
+    # Copy generated firmware to build directory
+    bootloader = TOOL_DIRECTORY / '..' / 'bootloader'
+    shutil.copy(firmware_path, bootloader / 'src' / 'firmware.bin')
+
+def generate_secrets():
+    # TODO: Generate AES/ECC/RSA keys
+    pass
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Bootloader Build Tool')
-    parser.add_argument("--initial-firmware", help="Path to the the firmware binary.", default=None)
+
+    # Setup arguments for our application
+    parser = argparse.ArgumentParser(description='Obsidian Build Tool')
+    parser.add_argument("--initial-firmware", help="A path to the compiled firmware binary", default=None)
     args = parser.parse_args()
+
+    # Use the default firmware if none is provided otherwise look for the binary at the path specificed
     if args.initial_firmware is None:
-        binary_path = FILE_DIR / '..' / 'firmware' / 'firmware' / 'gcc' / 'main.bin'
+        binary_path = TOOL_DIRECTORY / '..' / 'firmware' / 'firmware' / 'gcc' / 'main.bin'
     else:
         binary_path = os.path.abspath(pathlib.Path(args.initial_firmware))
 
+    # File doesn't exist/cannot be found
     if not os.path.isfile(binary_path):
         raise FileNotFoundError(
-            "ERROR: {} does not exist or is not a file. You may have to call \"make\" in the firmware directory.".format(
-                binary_path))
+            "ERROR: {} does not exist or is not a file. You may have to call \"make\" in the firmware directory."
+            .format(binary_path)
+        )
 
-    copy_initial_firmware(binary_path)
-    make_bootloader()
+    generate_secrets()
+    copy_firmware(binary_path)
+    compile_bootloader()
+    print("Compiled succesfully.")
+
+
