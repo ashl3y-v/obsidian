@@ -22,9 +22,9 @@ import argparse
 import struct
 import time
 
-from Crypto.Signature import pkcs1_15
+from Crypto.Signature import DSS
 from Crypto.Hash import SHA256
-from Crypto.PublicKey import RSA
+from Crypto.PublicKey import ECC
 from serial import Serial
 
 RESP_OK = b'\x00'
@@ -78,18 +78,20 @@ def main(ser, infile, debug):
     with open(infile, 'rb') as fp:
         firmware_blob = fp.read()
 
-    
-    signature = firmware_blob[0:512] 
-    metadata = firmware_blob[512:516]
-    firmware = firmware_blob[516:]
+    signature = firmware_blob[0:64] 
+    metadata = firmware_blob[64:68]
+    firmware = firmware_blob[68:]
     
     # Check for integrity compromise:
-    key = RSA.import_key(open('pubkey').read())
+    pubkey = ECC.import_key('keyfile')
+
     h = SHA256.new(metadata + firmware)
+    verifier = DSS.new(pubkey, 'fips-186-3')
+
     try:
-        pkcs1_15.new(key).verify(h, signature)
-    except (ValueError, TypeError):
-        print("Suspicious data detected, update abort.")  
+        verifier.verify(h, signature)
+    except ValueError:
+        print("Invalid signature, aborting.")
         return ser
 
     
