@@ -34,13 +34,22 @@ def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack_from('<HH', metadata)
     print(f'Request to install version {version}\n')
 
+    # Prevent debug abuse
+    if version == 0 and debug == False:
+        raise RuntimeError("Invalid version request, aborting.")
+        return ser
+        
     # Handshake for update
     ser.write(b'U')
     
     print('Waiting for bootloader to enter update mode...')
     while ser.read(1).decode() != 'U':
         pass
-    
+
+    old_version = int(ser.read(1).decode());
+    if old_version > new_version and debug == False:
+        raise RuntimeError("Invalid version request, aborting.")
+        return ser
 
     # Send size and version to bootloader.
     if debug:
@@ -92,7 +101,7 @@ def main(ser, infile, debug):
     try:
         verifier.verify(h, signature)
     except ValueError:
-        print("Invalid signature, aborting.")
+        raise RuntimeError("Invalid signature, aborting.")
         return ser
 
     ## Proceed to sending data.
