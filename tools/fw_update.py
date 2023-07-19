@@ -22,7 +22,9 @@ import argparse
 import struct
 import time
 
-from Crypto.PublicKey import ECC
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
 from serial import Serial
 
 RESP_OK = b'\x00'
@@ -76,17 +78,22 @@ def main(ser, infile, debug):
     with open(infile, 'rb') as fp:
         firmware_blob = fp.read()
 
-    metadata = firmware_blob[0:4]
-    signature = firmware_blob[4:516] 
+    
+    signature = firmware_blob[0:512] 
+    metadata = firmware_blob[512:516]
     firmware = firmware_blob[516:]
     
+    # Check for integrity compromise:
+    key = RSA.import_key(open('pubkey').read())
+    h = SHA256.new(metadata + firmware)
+    try:
+        pkcs1_15.new(key).verify(h, signature)
+    except (ValueError, TypeError):
+        print("Suspicious data detected, update abort.")  
+        return ser
+
+    
     send_metadata(ser, metadata, debug=debug)
-
-    f = open('kee.pem','rt')
-    key = ECC.import_key(f.read())
-
-    
-    
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start: frame_start + FRAME_SIZE]
 
