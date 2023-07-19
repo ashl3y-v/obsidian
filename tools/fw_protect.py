@@ -7,6 +7,29 @@ import struct
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
+from Crypto.Signature import eddsa
+from Crypto.PublicKey import ECC
+
+# sender
+# data = b"sussy among us"
+#
+#
+# en_key = get_random_bytes(16)
+#
+# cipher = AES.new(en_key, AES.MODE_GCM)
+# nonce = cipher.nonce
+#
+# ciphertext, tag = cipher.encrypt_and_digest(data + signature)
+
+# reader
+
+# verifier = eddsa.new(eddsa.import_public_key(pub_key.export_key(format="raw")), 'rfc8032')
+#
+# verifier.verify(data, signature)
+#
+# cipher = AES.new(en_key, AES.MODE_GCM, nonce=nonce)
+#
+# plaintext = cipher.decrypt_and_verify(ciphertext, tag)
 
 
 def protect_firmware(infile, outfile, version, message):
@@ -23,14 +46,20 @@ def protect_firmware(infile, outfile, version, message):
     # Append firmware and message to metadata
     firmware_blob = metadata + firmware_and_message
 
-    # random key, duh
-    key = get_random_bytes(256)
+    sig_key = ECC.generate(curve="Ed25519")
+    pub_key = sig_key.public_key()
+
+    signer = eddsa.new(sig_key, mode="rfc8032")
+
+    signature = signer.sign(data)
+
+    en_key = get_random_bytes(256)
 
     # check if supports 128 bit nonce, C impl might be cringe
     # nonce = get_random_bytes(12)
     # GCM mode ftw ong
     # padding issues ???? (sus)
-    cipher = AES.new(key, AES.MODE_GCM)
+    cipher = AES.new(en_key, AES.MODE_GCM)
     nonce = cipher.nonce
 
     # MAC tag 4 checking integrity
@@ -40,6 +69,14 @@ def protect_firmware(infile, outfile, version, message):
     # :( bye bye firmware blob nice knowing you
     with open(outfile, "wb+") as outfile:
         outfile.write(firmware_blob)
+
+    print(sig_key.export_key(mode="raw"))
+    with open("secret_build_output.txt", "wb") as secfile:
+        # do we need to save private key?
+        secfile.write(en_key + b"\n" + sig_key.export_key(mode="raw") + b"\n")
+
+    with open("public.txt", "wb") as pubfile:
+        pubfile.write(pub_key.export_key(mode="raw") + b"\n")
 
     # now I'm all alone, my scope is at an end
 
