@@ -83,10 +83,11 @@ def main(ser, infile, debug):
     firmware = firmware_blob[68:]
     
     # Check for integrity compromise:
-    pubkey = ECC.import_key('keyfile')
+    f = open('sigfile','rt')
+    sigkey = ECC.import_key(f.read())
 
     h = SHA256.new(metadata + firmware)
-    verifier = DSS.new(pubkey, 'fips-186-3')
+    verifier = DSS.new(sigkey, 'fips-186-3')
 
     try:
         verifier.verify(h, signature)
