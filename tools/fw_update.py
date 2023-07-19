@@ -22,6 +22,7 @@ import argparse
 import struct
 import time
 
+from Crypto.PublicKey import ECC
 from serial import Serial
 
 RESP_OK = b'\x00'
@@ -37,6 +38,7 @@ def send_metadata(ser, metadata, debug=False):
     print('Waiting for bootloader to enter update mode...')
     while ser.read(1).decode() != 'U':
         pass
+    
 
     # Send size and version to bootloader.
     if debug:
@@ -74,11 +76,17 @@ def main(ser, infile, debug):
     with open(infile, 'rb') as fp:
         firmware_blob = fp.read()
 
-    metadata = firmware_blob[:4]
-    firmware = firmware_blob[4:]
-
+    metadata = firmware_blob[0:4]
+    signature = firmware_blob[4:516] 
+    firmware = firmware_blob[516:]
+    
     send_metadata(ser, metadata, debug=debug)
 
+    f = open('kee.pem','rt')
+    key = ECC.import_key(f.read())
+
+    
+    
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start: frame_start + FRAME_SIZE]
 
