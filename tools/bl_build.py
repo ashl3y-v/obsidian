@@ -33,7 +33,8 @@ def compile_bootloader() -> bool:
     run('make clean', shell=True)
 
     # Did our compilation succeed
-    if run(["make", "-s"]) == 0:
+    status = run("make").returncode
+    if status == 0:
         print(f"Compiled binary located at {bootloader}")
     else:
         print("Failed to compile, check output for errors.")
