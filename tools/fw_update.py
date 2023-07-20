@@ -30,7 +30,10 @@ from serial import Serial
 RESP_OK = b'\x00'
 FRAME_SIZE = 16
 
+TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
+
 def send_metadata(ser, metadata, debug=False):
+    # Parse version information
     version, size = struct.unpack_from('<HH', metadata)
     print(f'Request to install version {version}\n')
 
@@ -39,9 +42,8 @@ def send_metadata(ser, metadata, debug=False):
         raise RuntimeError("Invalid version request, aborting.")
         return ser
         
-    # Handshake for update
+    # Handshake with bootloader for update
     ser.write(b'U')
-    
     print('Waiting for bootloader to enter update mode...')
     while ser.read(1).decode() != 'U':
         pass
@@ -55,7 +57,6 @@ def send_metadata(ser, metadata, debug=False):
     # Send size and version to bootloader.
     if debug:
         print(metadata)
-
     ser.write(metadata)
 
     # Wait for an OK from the bootloader.
@@ -63,22 +64,20 @@ def send_metadata(ser, metadata, debug=False):
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
-
 def send_frame(ser, frame, debug=False):
-    ser.write(frame)  # Write the frame...
 
+    # Write/optionally print the frame
+    ser.write(frame)
     if debug:
         print(frame)
 
+    # Wait for an OK from the bootloader
     time.sleep(0.1)
-
-    resp = ser.read()  # Wait for an OK from the bootloader
-
+    resp = ser.read()  
     time.sleep(0.1)
 
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
-
     if debug:
         print("Resp: {}".format(ord(resp)))
 
@@ -88,12 +87,14 @@ def main(ser, infile, debug):
     with open(infile, 'rb') as fp:
         firmware_blob = fp.read()
 
+    # Parse firmware blob
     signature = firmware_blob[0:64] 
     metadata = firmware_blob[64:68]
     firmware = firmware_blob[68:]
     
-    # Check for integrity compromise:
-    f = open('sigfile','rt')
+    # Check for integrity compromise using ECC public key signature
+    crypto = TOOL_DIRECTORY / '..' / 'bootloader' / 'crypto'
+    f = open(crypto / 'ecc_public.der','rt')
     sigkey = ECC.import_key(f.read())
 
     h = SHA256.new(metadata + firmware)
@@ -105,19 +106,20 @@ def main(ser, infile, debug):
         raise RuntimeError("Invalid signature, aborting.")
         return ser
 
+    
     ## Proceed to sending data.
 
-    # Send metadata.
+    # Send metadata
     send_metadata(ser, metadata, debug=debug)
 
-    # Send firmware in frames.
+    # Send firmware in frames
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start: frame_start + FRAME_SIZE]
 
-        # Get length of data.
+        # Get length
         length = len(data)
         frame_fmt = '>H{}s'.format(length)
-
+        
         # Construct frame.
         frame = struct.pack(frame_fmt, length, data)
 
