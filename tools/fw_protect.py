@@ -1,13 +1,11 @@
 """
 Firmware Bundle-and-Protect Tool
-
 """
 import argparse
 import struct
 import pathlib
 
 from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
 from Crypto.Signature import eddsa
 from Crypto.PublicKey import ECC
 
@@ -22,10 +20,15 @@ def protect_firmware(infile, outfile, version, message):
     with open(infile, "rb") as infile:
         firmware = infile.read()
 
+    # ensure that the firmware and message are not too large
+    assert version <= 65535
+    assert len(firmware) <= 32768
+    assert len(message) <= 1024
+
     # convert message to bytestring
     message = message.encode()
 
-    # Extract keys from build output [AES | ECC priv]
+    # Extract keys from secret build output [AES | ECC priv]
     # Public key not needed for signing so not loaded
     with open(CRYPTO_DIRECTORY / "secret_build_output.txt", mode="rb") as privfile:
         aes_key, priv_key = privfile.read().splitlines()
