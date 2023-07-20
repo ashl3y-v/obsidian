@@ -46,10 +46,11 @@ def send_metadata(ser, metadata, debug=False):
     while ser.read(1).decode() != 'U':
         pass
 
-    old_version = int(ser.read(1).decode());
+    # Invalid version check from bootloader - not working ae
+    """old_version = int(ser.read(4).decode());
     if old_version > new_version and debug == False:
         raise RuntimeError("Invalid version request, aborting.")
-        return ser
+        return ser"""
 
     # Send size and version to bootloader.
     if debug:
