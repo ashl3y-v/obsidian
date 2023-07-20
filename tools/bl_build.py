@@ -54,7 +54,7 @@ def copy_firmware(firmware_path: str) -> None:
 def generate_secrets():
     try:
         # Get the directory to store generated files
-        bootloader = TOOL_DIRECTORY / '..' / 'bootloader' / 'src'
+        crypto = TOOL_DIRECTORY / '..' / 'bootloader' / 'crypto'
 
         # Generate our random symmetric AES key & initalization vector
         aes = get_random_bytes(32)
@@ -65,20 +65,20 @@ def generate_secrets():
         ecc_public  = ecc_private.public_key()
 
         # Write our AES and ECC private key and close for safety
-        with open(bootloader / 'secret_build_output.txt', mode='wb') as file:
+        with open(crypto / 'secret_build_output.txt', mode='wb') as file:
             file.write(aes + b'\n')
             file.write(ecc_private.export_key(format='DER'))
-            print(f"secret_build_output.txt written to {bootloader}")
+            print(f"secret_build_output.txt written to {crypto}")
 
         # Create a .der file to store our ECC public key
-        with open(bootloader / 'ecc_public.der', mode='wb') as file:
+        with open(crypto / 'ecc_public.der', mode='wb') as file:
             file.write(ecc_public.export_key(format='DER') + b'\n')
-            print(f"ecc_public.der written to {bootloader}")
+            print(f"ecc_public.der written to {crypto}")
 
         # Lastly, store our IV
-        with open(bootloader / 'iv.txt', mode='wb') as file:
+        with open(crypto / 'iv.txt', mode='wb') as file:
             file.write(iv + b'\n')
-            print(f"iv.txt written to {bootloader}")
+            print(f"iv.txt written to {crypto}")
 
     # No point of trying to compile if we don't have any secret
     except Exception as excep:
