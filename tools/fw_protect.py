@@ -10,6 +10,8 @@ from Crypto.Random import get_random_bytes
 from Crypto.Signature import eddsa
 from Crypto.PublicKey import ECC
 
+TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
+
 # sender
 # data = b"sussy among us"
 #
@@ -45,21 +47,30 @@ def protect_firmware(infile, outfile, version, message):
 
     # Append firmware and message to metadata
     firmware_blob = metadata + firmware_and_message
+    
+    # Determine the directory where cryptographic keys are stored
+    cryptography = TOOL_DIRECTORY / '..' / 'bootloader' / 'crypto'
 
-    sig_key = ECC.generate(curve="Ed25519")
-    pub_key = sig_key.public_key()
+    # Extract keys from build output (AES then ECC)
+    sig_key, pub_key, en_key = None
+    with open(cryptography / 'secret_build_output.txt', mode='rb') as fp:
+        en_key = fp.readline()
+        sig_key = ECC.import_key(fp.readline())
+        pub_key = sig_key.public_key()
+
+    # Extract automatically generated initalization vector
+    iv = None
+    with open(cryptography / 'iv.txt', mode='rb') as fp:
+        iv = fp.readline()
 
     signer = eddsa.new(sig_key, mode="rfc8032")
-
     signature = signer.sign(data)
-
-    en_key = get_random_bytes(256)
 
     # check if supports 128 bit nonce, C impl might be cringe
     # nonce = get_random_bytes(12)
     # GCM mode ftw ong
     # padding issues ???? (sus)
-    cipher = AES.new(en_key, AES.MODE_GCM)
+    cipher = AES.new(en_key, AES.MODE_GCM, iv=iv)
     nonce = cipher.nonce
 
     # MAC tag 4 checking integrity
