@@ -4,6 +4,7 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+import pathlib
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
@@ -52,7 +53,9 @@ def protect_firmware(infile, outfile, version, message):
     cryptography = TOOL_DIRECTORY / '..' / 'bootloader' / 'crypto'
 
     # Extract keys from build output (AES then ECC)
-    sig_key, pub_key, en_key = None
+    sig_key  = None
+    en_key   = None
+    pub_key  = None
     with open(cryptography / 'secret_build_output.txt', mode='rb') as fp:
         en_key = fp.readline()
         sig_key = ECC.import_key(fp.readline())
@@ -63,6 +66,7 @@ def protect_firmware(infile, outfile, version, message):
     with open(cryptography / 'iv.txt', mode='rb') as fp:
         iv = fp.readline()
 
+    # fix the rest lmao
     signer = eddsa.new(sig_key, mode="rfc8032")
     signature = signer.sign(data)
 
