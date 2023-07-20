@@ -16,15 +16,13 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Signature import eddsa
 from Crypto.PublicKey import ECC
-
 from subprocess import run
 
 TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
-
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
-def compile_bootloader() -> bool:
+def compile_bootloader():
     # Navigate to bootloader directory
     bootloader = TOOL_DIRECTORY / '..' / 'bootloader'
     os.chdir(bootloader)
@@ -32,14 +30,14 @@ def compile_bootloader() -> bool:
     # Delete any previous executables and compile
     run('make clean', shell=True)
 
-    # Did our compilation succeed
+    # Error checking
     status = run("make").returncode
     if status == 0:
         print(f"Compiled binary located at {bootloader}")
     else:
         print("Failed to compile, check output for errors.")
 
-def copy_firmware(firmware_path: str) -> None:
+def copy_firmware(firmware_path):
     # Navigate to our tool directory
     os.chdir(TOOL_DIRECTORY)
 
@@ -68,34 +66,23 @@ def generate_secrets():
         with open(crypto / 'secret_build_output.txt', mode='wb') as file:
             file.write(aes + b'\n')
             file.write(ecc_private.export_key(format='DER'))
-            print(f"secret_build_output.txt written to {crypto}")
 
         # Create a .der file to store our ECC public key
         with open(crypto / 'ecc_public.der', mode='wb') as file:
             file.write(ecc_public.export_key(format='DER') + b'\n')
-            print(f"ecc_public.der written to {crypto}")
 
         # Lastly, store our IV
         with open(crypto / 'iv.txt', mode='wb') as file:
             file.write(iv + b'\n')
-            print(f"iv.txt written to {crypto}")
 
-    # No point of trying to compile if we don't have any secret
+    # No point of trying to compile if we don't have any secrets
     except Exception as excep:
         print(f"ERROR: There was an error while attempting to generate build secrets and keys.\n{excep}")
         exit(SECRET_ERROR)
     else:
         print(f"All build secrets and information were generated succesfully.")
 
-
-    
-if __name__ == '__main__':
-
-    # Setup arguments for our application
-    parser = argparse.ArgumentParser(description='Obsidian Build Tool')
-    parser.add_argument("--initial-firmware", help="A path to the compiled firmware binary", default=None)
-    args = parser.parse_args()
-
+def main(args):
     # Build and use default firmware if none is provided, otherwise look for the binary at the path specificed
     if args.initial_firmware is None:
         firmware_path = TOOL_DIRECTORY / '..' / 'firmware' / 'firmware'
@@ -117,6 +104,16 @@ if __name__ == '__main__':
     generate_secrets()
     copy_firmware(binary_path)
     compile_bootloader()
+    
+if __name__ == '__main__':
+    # Setup arguments for our application
+    parser = argparse.ArgumentParser(description='Firmware Build Tool')
+    parser.add_argument("--initial-firmware", help="A path to the compiled firmware binary", default=None)
+    args = parser.parse_args()
+
+    main(args)
+
+   
     
 
 
