@@ -79,14 +79,6 @@ int main(void) {
         uint32_t instruction = uart_read(UART1, BLOCKING, &resp);
         if (instruction == UPDATE) {
             uart_write_str(UART1, "U");
-
-            // Send the old version number.
-            uint16_t oldv = *fw_version_address;
-            char buffer[1]; 
-            sprintf(buffer, "%d", oldv); 
-            uart_write_str(buffer);
-            
-            uart_write_str(UART1, str(oldv));
             load_firmware();
         } else if (instruction == BOOT) {
             uart_write_str(UART1, "B");
