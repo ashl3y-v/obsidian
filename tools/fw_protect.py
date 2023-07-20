@@ -14,6 +14,9 @@ CRYPTO_DIRECTORY = (
     pathlib.Path(__file__).parent.parent.joinpath("bootloader/crypto").absolute()
 )
 
+MAX_FIRMWARE_SIZE = 32768
+MAX_MESSAGE_SIZE  = 1024
+MAX_VERSION_SIZE  = 65535
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
@@ -21,9 +24,9 @@ def protect_firmware(infile, outfile, version, message):
         firmware = infile.read()
 
     # ensure that the firmware and message are not too large
-    assert version <= 65535
-    assert len(firmware) <= 32768
-    assert len(message) <= 1024
+    assert version <= MAX_VERSION_SIZE
+    assert len(firmware) <= MAX_FIRMWARE_SIZE
+    assert len(message) <= MAX_MESSAGE_SIZE
 
     # convert message to bytestring
     message = message.encode()
