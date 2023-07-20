@@ -30,6 +30,10 @@ from serial import Serial
 RESP_OK = b'\x00'
 FRAME_SIZE = 16
 
+BEGIN = 1
+DATA = 2
+END = 3
+
 TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
 def send_metadata(ser, metadata, debug=False):
@@ -67,6 +71,7 @@ def send_metadata(ser, metadata, debug=False):
 def send_frame(ser, frame, debug=False):
 
     # Write/optionally print the frame
+    
     ser.write(frame)
     if debug:
         print(frame)
