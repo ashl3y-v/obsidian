@@ -15,8 +15,9 @@ CRYPTO_DIRECTORY = (
 )
 
 MAX_FIRMWARE_SIZE = 32768
-MAX_MESSAGE_SIZE  = 1024
-MAX_VERSION_SIZE  = 65535
+MAX_MESSAGE_SIZE = 1024
+MAX_VERSION_SIZE = 65535
+
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
@@ -42,11 +43,7 @@ def protect_firmware(infile, outfile, version, message):
         nonce = ivfile.read()
 
     # Pack version and size into two little-endian shorts
-    metadata = (
-        struct.pack("<HH", version, len(message))
-        + message
-        + struct.pack("<H", len(firmware))
-    )
+    metadata = struct.pack("<HHH", version, len(firmware), len(message)) + message
 
     aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
     signer = eddsa.new(priv_key, mode="rfc8032")
