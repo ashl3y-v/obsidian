@@ -182,7 +182,7 @@ void load_firmware(void) {
     rcv = uart_read(UART1, BLOCKING, &read);
     version |= (uint32_t)rcv << 8;
 
-    uart_write_str(UART2, "Received Firmware Version: ");
+    uart_write_str(UART2, "Received firmware version: ");
     uart_write_hex(UART2, version);
     nl(UART2);
 
@@ -192,7 +192,7 @@ void load_firmware(void) {
     rcv = uart_read(UART1, BLOCKING, &read);
     size |= (uint32_t)rcv << 8;
 
-    uart_write_str(UART2, "Received Firmware Size: ");
+    uart_write_str(UART2, "Received firmware size: ");
     uart_write_hex(UART2, size);
     nl(UART2);
 
