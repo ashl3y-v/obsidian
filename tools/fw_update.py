@@ -109,7 +109,7 @@ def main(ser, infile, debug):
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.der", "rt")
     sigkey = ECC.import_key(f.read())
-    h = SHA256.new(received_message)
+    h = SHA256.new(metadata + firmware)
     verifier = DSS.new(sigkey, 'fips-186-3')
     try:
         verifier.verify(h, signature)
