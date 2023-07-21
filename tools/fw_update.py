@@ -110,7 +110,6 @@ def main(ser, infile, debug):
     sigkey = ECC.import_key(f.read())
 
     h = SHA256.new(metadata + firmware)
-    verifier = DSS.new(sigkey, "fips-186-3")
 
     try:
         verifier.verify(h, signature)
