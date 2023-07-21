@@ -24,6 +24,8 @@ import time
 import pathlib
 
 from Crypto.PublicKey import ECC
+from Crypto.PublicKey import DSS
+from Crypto.PublicKey import SHA256
 from Crypto.Signature import eddsa
 from serial import Serial
 
@@ -107,9 +109,10 @@ def main(ser, infile, debug):
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.der", "rt")
     sigkey = ECC.import_key(f.read())
-    verifier = eddsa.new(sigkey, "rfc8032")
+    h = SHA256.new(metadata + firmware)
+    verifier = DSS.new(sigkey, 'fips-186-3')
     try:
-        verifier.verify(metadata + firmware, signature)
+        verifier.verify(h, signature)
     except ValueError:
         raise RuntimeError("Invalid signature, aborting.")
         return ser
