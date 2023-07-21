@@ -16,11 +16,16 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Signature import eddsa
 from Crypto.PublicKey import ECC
+from Crypto.Signature import DSS
+from Crypto.Hash import SHA256
 from subprocess import run
 
 TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
+
+def arrayize(binary_string):
+    return '{' + ','.join([hex(char) for char in binary_string]) + '}'
 
 def compile_bootloader():
     # Navigate to bootloader directory
@@ -67,9 +72,9 @@ def generate_secrets():
             file.write(aes + b'\n')
             file.write(ecc_private.export_key(format='DER'))
 
-        # Create a .der file to store our ECC public key
-        with open(crypto / 'ecc_public.der', mode='wb') as file:
-            file.write(ecc_public.export_key(format='DER') + b'\n')
+        # Create a .RAW file to store our RAW public key
+        with open(crypto / 'ecc_public.raw', mode='wb') as file:
+            file.write(ecc_public.export_key(format='raw') + b'\n')
 
         # Lastly, store our IV
         with open(crypto / 'iv.txt', mode='wb') as file:
