@@ -59,7 +59,7 @@ def generate_secrets():
         iv  = get_random_bytes(16)
 
         # ECC key pair generation
-        ecc_private = ECC.generate(curve="ed25519")
+        ecc_private = ECC.generate(curve="secp256r1")
         ecc_public  = ecc_private.public_key()
 
         # Write our AES and ECC private key and close for safety
