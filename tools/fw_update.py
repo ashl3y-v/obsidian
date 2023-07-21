@@ -19,14 +19,13 @@ just a zero
 """
 
 import argparse
+import pathlib
 import struct
 import time
-import pathlib
 
+from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
-from Crypto.PublicKey import DSS
-from Crypto.PublicKey import SHA256
-from Crypto.Signature import eddsa
+from Crypto.Signature import DSS
 from serial import Serial
 
 RESP_OK = b"\x00"
@@ -110,7 +109,7 @@ def main(ser, infile, debug):
     f = open(CRYPTO_DIRECTORY / "ecc_public.der", "rt")
     sigkey = ECC.import_key(f.read())
     h = SHA256.new(metadata + firmware)
-    verifier = DSS.new(sigkey, 'fips-186-3')
+    verifier = DSS.new(sigkey, "fips-186-3")
     try:
         verifier.verify(h, signature)
     except ValueError:
