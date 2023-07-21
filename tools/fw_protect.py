@@ -36,8 +36,8 @@ def protect_firmware(infile, outfile, version, message):
 
     # Extract keys from secret build output [AES | ECC priv]
     # Public key not needed for signing so not loaded
-    with open(CRYPTO_DIR / "secret_build_output.txt", mode="rb") as privfile:
-        aes_key, priv_key = privfile.read().splitlines()
+    with open(CRYPTO_DIR / "secret_build_output.txt", mode="rb") as secfile:
+        aes_key, priv_key = secfile.read().splitlines()
         priv_key = ECC.import_key(priv_key)
 
     # Extract automatically generated initalization vector (IV) / nonce
