@@ -110,7 +110,7 @@ def main(ser, infile, debug):
     f = open(CRYPTO_DIRECTORY / "ecc_public.der", "rt")
     sigkey = ECC.import_key(f.read())
     h = SHA256.new(received_message)
-    verifier = DSS.new(key, 'fips-186-3')
+    verifier = DSS.new(sigkey, 'fips-186-3')
     try:
         verifier.verify(h, signature)
     except ValueError:
