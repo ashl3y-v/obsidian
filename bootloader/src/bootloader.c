@@ -11,9 +11,11 @@
 
 // Library Imports
 #include <string.h>
+#include <stdio.h>
 
 // Application Imports
 #include "uart.h"
+#include "beaverssl.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -31,10 +33,25 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define FLASH_WRITESIZE 4
 
 // Protocol Constants
-#define OK ((unsigned char)0x00)
-#define ERROR ((unsigned char)0x01)
-#define UPDATE ((unsigned char)'U')
-#define BOOT ((unsigned char)'B')
+#define OK         ((uint8_t)(0x00))
+#define ERROR      ((uint8_t)(0x1))
+
+// Added just so the code can still compile
+#define UPDATE     ((unsigned char)'U')
+#define BOOT       ((unsigned char)'B')
+
+#define META       ((uint8_t)(0x2))
+#define CHUNK      ((uint8_t)(0x3))
+#define DONE       ((uint8_t)(0x4))
+#define FRAME_SIZE ((uint16_t)(0x10))
+
+// Size constants
+#define MAX_VERSION         65535
+#define MAX_MESSAGE_SIZE    1024
+#define MAX_FIRMWARE_SIZE   32768
+#define AES_KEY_LENGTH      32
+#define IV_LENGTH           16
+#define ECC_KEY_LENGTH      65
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -48,6 +65,13 @@ uint8_t* fw_release_message_address;
 
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
+
+struct crypto_keys_
+{
+    br_ec_public_key ec_public;
+    uint8_t iv[IV_LENGTH];
+    uint8_t aes[AES_KEY_LENGTH];
+} crypto_keys;
 
 int main(void) {
 
