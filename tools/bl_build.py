@@ -20,20 +20,23 @@ from Crypto.Signature import DSS
 from Crypto.Hash import SHA256
 from subprocess import run
 
-TOOL_DIRECTORY = pathlib.Path(__file__).parent.absolute()
+TOOL_DIR = pathlib.Path(__file__).parent.absolute()
+ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
+
 def arrayize(binary_string):
-    return '{' + ','.join([hex(char) for char in binary_string]) + '}'
+    return "{" + ",".join([hex(char) for char in binary_string]) + "}"
+
 
 def compile_bootloader():
     # Navigate to bootloader directory
-    bootloader = TOOL_DIRECTORY / '..' / 'bootloader'
+    bootloader = ROOT_DIR / "bootloader"
     os.chdir(bootloader)
 
     # Delete any previous executables and compile
-    run('make clean', shell=True)
+    run("make clean", shell=True)
 
     # Error checking
     status = run("make").returncode
@@ -42,59 +45,62 @@ def compile_bootloader():
     else:
         print("Failed to compile, check output for errors.")
 
+
 def copy_firmware(firmware_path):
     # Navigate to our tool directory
-    os.chdir(TOOL_DIRECTORY)
+    os.chdir(TOOL_DIR)
 
     # Copy generated firmware to build directory
-    bootloader = TOOL_DIRECTORY / '..' / 'bootloader'
+    bootloader = ROOT_DIR / "bootloader"
     try:
-        shutil.copy(firmware_path, bootloader / 'src' / 'firmware.bin')
+        shutil.copy(firmware_path, bootloader / "src" / "firmware.bin")
     except Exception as excep:
         print(f"{excep}")
         exit(FIRMWARE_ERROR)
 
+
 def generate_secrets():
     try:
         # Get the directory to store generated files
-        crypto = TOOL_DIRECTORY / '..' / 'bootloader' / 'crypto'
+        crypto = ROOT_DIR / "bootloader" / "crypto"
 
         # Generate our random symmetric AES key & initalization vector
         aes = get_random_bytes(32)
-        iv  = get_random_bytes(16)
+        iv = get_random_bytes(16)
 
         # ECC key pair generation
         ecc_private = ECC.generate(curve="secp256r1")
-        ecc_public  = ecc_private.public_key()
+        ecc_public = ecc_private.public_key()
 
         # Write our AES and ECC private key and close for safety
-        with open(crypto / 'secret_build_output.txt', mode='wb') as file:
-            file.write(aes + b'\n')
-            file.write(ecc_private.export_key(format='DER'))
+        with open(crypto / "secret_build_output.txt", mode="wb") as file:
+            file.write(aes + b"\n")
+            file.write(ecc_private.export_key(format="DER"))
 
         # Create a .RAW file to store our RAW public key
-        with open(crypto / 'ecc_public.raw', mode='wb') as file:
-            file.write(ecc_public.export_key(format='raw') + b'\n')
+        with open(crypto / "ecc_public.raw", mode="wb") as file:
+            file.write(ecc_public.export_key(format="raw") + b"\n")
 
         # Lastly, store our IV
-        with open(crypto / 'iv.txt', mode='wb') as file:
-            file.write(iv + b'\n')
+        with open(crypto / "iv.txt", mode="wb") as file:
+            file.write(iv + b"\n")
 
     # No point of trying to compile if we don't have any secrets
     except Exception as excep:
-        print(f"ERROR: There was an error while attempting to generate build secrets and keys.\n{excep}")
+        print(f"ERROR: Error while attempting to generate build secrets.\n{excep}")
         exit(SECRET_ERROR)
     else:
-        print(f"All build secrets and information were generated succesfully.")
+        print("All build secrets were generated succesfully.")
+
 
 def main(args):
     # Build and use default firmware if none is provided, otherwise look for the binary at the path specificed
     if args.initial_firmware is None:
-        firmware_path = TOOL_DIRECTORY / '..' / 'firmware' / 'firmware'
-        binary_path = TOOL_DIRECTORY / '..' / 'firmware' / 'firmware' / 'gcc' / 'main.bin'
+        firmware_path = ROOT_DIR / "firmware" / "firmware"
+        binary_path = ROOT_DIR / "firmware" / "firmware" / "gcc" / "main.bin"
         os.chdir(firmware_path)
 
-        run('make clean', shell=True)
+        run("make clean", shell=True)
         run("make")
     else:
         binary_path = os.path.abspath(pathlib.Path(args.initial_firmware))
@@ -102,23 +108,24 @@ def main(args):
     # File doesn't exist/cannot be found
     if not os.path.isfile(binary_path):
         raise FileNotFoundError(
-            "ERROR: {} does not exist or is not a file. You may have to call \"make\" in the firmware directory."
-            .format(binary_path)
+            'ERROR: {} does not exist or is not a file. You may have to call "make" in the firmware directory.'.format(
+                binary_path
+            )
         )
 
     generate_secrets()
     copy_firmware(binary_path)
     compile_bootloader()
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     # Setup arguments for our application
-    parser = argparse.ArgumentParser(description='Firmware Build Tool')
-    parser.add_argument("--initial-firmware", help="A path to the compiled firmware binary", default=None)
+    parser = argparse.ArgumentParser(description="Firmware Build Tool")
+    parser.add_argument(
+        "--initial-firmware",
+        help="A path to the compiled firmware binary",
+        default=None,
+    )
     args = parser.parse_args()
 
     main(args)
-
-   
-    
-
-
