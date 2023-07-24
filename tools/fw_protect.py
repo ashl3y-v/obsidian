@@ -32,9 +32,6 @@ def protect_firmware(infile, outfile, version, message):
     assert len(message) <= MAX_MESSAGE_SIZE
     assert len(firmware) <= MAX_FIRMWARE_SIZE
 
-    # convert message to bytestring
-    message = message.encode()
-
     # Extract keys from secret build output [AES | ECC priv]
     # Public key not needed for signing so not loaded
     with open(CRYPTO_DIR / "secret_build_output.txt", mode="rb") as secfile:
@@ -46,12 +43,12 @@ def protect_firmware(infile, outfile, version, message):
         nonce = ivfile.read()
 
     # Pack version and size into two little-endian shorts
-    metadata = struct.pack("<HHH", version, len(firmware), len(message)) + message
+    metadata = struct.pack("<HHH", version, len(firmware), len(message))
 
     aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
     signer = DSS.new(priv_key, mode="fips-186-3")
 
-    blob = metadata + aes.encrypt(firmware)
+    blob = metadata + aes.encrypt(firmware + message.encode() + b"\x00")
     h = SHA256.new(blob)
     blob = signer.sign(h) + blob
 
