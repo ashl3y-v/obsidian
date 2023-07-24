@@ -111,8 +111,8 @@ def update(ser, infile, debug):
 
     # Parse firmware blob
     signature = firmware_blob[0:64]
-    metadata = firmware_blob[64:68]
-    firmware = firmware_blob[68:]
+    metadata = firmware_blob[64:70]
+    firmware = firmware_blob[70:]
 
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rt")
