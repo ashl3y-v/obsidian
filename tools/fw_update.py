@@ -22,14 +22,16 @@ import argparse
 import pathlib
 import struct
 import time
+import socket
+
+from util import UART0_PATH, UART1_PATH, UART2_PATH, print_hex, DomainSocketSerial
 
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
 from Crypto.Signature import DSS
-from serial import Serial
 
 RESP_OK = b"\x00"
-FRAME_SIZE = 16
+FRAME_SIZE = 256
 
 OK = struct.pack("<H", 0)
 ERROR = struct.pack("<H", 1)
@@ -46,17 +48,18 @@ CRYPTO_DIRECTORY = (
 def send_metadata(ser, metadata, debug=False):
     # Parse version information
     version, size = struct.unpack_from("<HH", metadata)
-    print(f"Request to install version {version}\n")
+    print(f"Version: {version}\nSize: {size} bytes\n")
 
     # Prevent debug abuse
-    if version == 0 and debug == False:
+    if version == 0 and not debug:
         raise RuntimeError("Invalid version request, aborting.")
-        return ser
 
     # Handshake with bootloader for update
     ser.write(b"U")
     print("Waiting for bootloader to enter update mode...")
     while ser.read(1).decode() != "U":
+        # needed?
+        # print("got a byte")
         pass
 
     # Invalid version check from bootloader - not working ae
@@ -68,6 +71,7 @@ def send_metadata(ser, metadata, debug=False):
     # Send size and version to bootloader.
     if debug:
         print(metadata)
+
     ser.write(META)
     ser.write(metadata)
 
@@ -81,21 +85,26 @@ def send_frame(ser, frame, debug=False):
     # Write/optionally print the frame
     ser.write(CHUNK)
     ser.write(frame)
+
     if debug:
-        print(frame)
+        print_hex(frame)
 
     # Wait for an OK from the bootloader
+    # insecure example does not have first sleep, needed?
     time.sleep(0.1)
+
     resp = ser.read()
+
     time.sleep(0.1)
 
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
+
     if debug:
         print("Resp: {}".format(ord(resp)))
 
 
-def main(ser, infile, debug):
+def update(ser, infile, debug):
     # Open serial port. Set baudrate to 115200. Set timeout to 2 seconds.
     with open(infile, "rb") as fp:
         firmware_blob = fp.read()
@@ -114,7 +123,6 @@ def main(ser, infile, debug):
         verifier.verify(h, signature)
     except ValueError:
         raise RuntimeError("Invalid signature, aborting.")
-        return ser
 
     ## Proceed to sending data.
 
@@ -125,22 +133,33 @@ def main(ser, infile, debug):
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
 
-        # Get length
+        # Get length of data
         length = len(data)
         frame_fmt = ">H{}s".format(length)
 
         # Construct frame.
         frame = struct.pack(frame_fmt, length, data)
 
-        if debug:
-            print("Writing frame {} ({} bytes)...".format(idx, len(frame)))
-
         send_frame(ser, frame, debug=debug)
-    ser.write(DONE)
+
+        if debug:
+            print(f"Wrote frame {idx} ({len(frame)} bytes)...")
+
     print("Done writing firmware.")
+    ser.write(DONE)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
     ser.write(struct.pack(">H", 0x0000))
+
+    resp = ser.read(1)  # Wait for an OK from the bootloader
+    if resp != RESP_OK:
+        raise RuntimeError(
+            "ERROR: Bootloader responded to zero length frame with {}".format(
+                repr(resp)
+            )
+        )
+
+    print("Wrote zero length frame")
 
     return ser
 
@@ -148,9 +167,18 @@ def main(ser, infile, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Firmware Update Tool")
 
-    parser.add_argument("--port", help="Does nothing, included to adhere to command examples in rule doc", required=False)
-    parser.add_argument("--firmware", help="Path to firmware image to load.", required=False)
-    parser.add_argument("--debug", help="Enable debugging messages.", action="store_true")
+    parser.add_argument(
+        "--port",
+        help="Does nothing, included to adhere to command examples in rule doc",
+        required=False,
+    )
+    parser.add_argument(
+        "--firmware", help="Path to firmware image to load.", required=False
+    )
+    parser.add_argument(
+        "--debug", help="Enable debugging messages.", action="store_true"
+    )
+
     args = parser.parse_args()
 
     uart0_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

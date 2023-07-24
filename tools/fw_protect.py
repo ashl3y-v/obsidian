@@ -74,7 +74,6 @@ if __name__ == "__main__":
         "--message", help="Release message for this firmware.", required=True
     )
     args = parser.parse_args()
-
     protect_firmware(
         infile=args.infile,
         outfile=args.outfile,
