@@ -10,12 +10,14 @@
 #include "driverlib/sysctl.h"    // System control API (clock/reset)
 
 // Library Imports
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 // Application Imports
-#include "beaverssl.h"
+
 #include "uart.h"
+#include "../crypto/secrets.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -45,14 +47,6 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define DONE ((uint8_t)(0x4))
 #define FRAME_SIZE ((uint16_t)(0x10))
 
-// Size constants
-#define MAX_VERSION 65535
-#define MAX_MESSAGE_SIZE 1024
-#define MAX_FIRMWARE_SIZE 32768
-#define AES_KEY_LENGTH 32
-#define IV_LENGTH 16
-#define ECC_KEY_LENGTH 65
-
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
 extern int _binary_firmware_bin_start;
@@ -67,11 +61,6 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
 
-struct crypto_keys_ {
-    br_ec_public_key ec_public;
-    uint8_t iv[IV_LENGTH];
-    uint8_t aes[AES_KEY_LENGTH];
-} crypto_keys;
 
 int main(void) {
     // A 'reset' on UART0 will re-start this code at the top of main, won't
