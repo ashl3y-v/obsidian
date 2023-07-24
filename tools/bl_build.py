@@ -18,7 +18,7 @@ from subprocess import run, call
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 TOOL_DIR = pathlib.Path(__file__).parent.absolute()
 BOOTLOADER_DIR = ROOT_DIR / "bootloader"
-FIRMWARE_DIR = ROOT_DIR / "firmware/firmware"
+FIRMWARE_DIR = ROOT_DIR / "firmware"
 
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
