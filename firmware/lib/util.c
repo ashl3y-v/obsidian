@@ -1,5 +1,12 @@
+// Copyright 2023 The MITRE Corporation. ALL RIGHTS RESERVED
+// Approved for public release. Distribution unlimited 23-02181-13.
+
 #include "util.h"
 #include <string.h>
+
+// strnlen seems to be nonstandard in this setup, but it is present so signature to supress warning
+size_t strnlen(const char *s, size_t maxlen);
+
 char hex2nybble(char nybble)
 {
     if(nybble >= 'A' && nybble <= 'F') return nybble - 'A' + 10;

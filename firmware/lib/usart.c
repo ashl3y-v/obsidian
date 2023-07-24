@@ -1,3 +1,6 @@
+// Copyright 2023 The MITRE Corporation. ALL RIGHTS RESERVED
+// Approved for public release. Distribution unlimited 23-02181-13.
+
 #include "usart.h"
 #include "uart.h"
 
@@ -28,7 +31,7 @@ int readLine(char *buffer, int max_bytes)
 
 void write(const char *buffer)
 {
-    uart_write_str(UART2, buffer); // Send the byte.
+    uart_write_str(UART2, (char *) buffer); // Send the byte.
 }
 
 void writeLine(const char *buffer)

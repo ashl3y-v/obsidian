@@ -66,14 +66,14 @@ include ${STELLARIS}/makedefs
 IPATH+=./include
 IPATH=${STELLARIS}
 IPATH+=${UART}
-IPATH+=$(realpath ../lib/)
+IPATH+=$(realpath ./lib/)
 
 #
 # Where to find source files that do not live in this directory
 #
 VPATH=./src
 VPATH+=${UART}
-IPATH+=$(realpath ../lib/)
+IPATH+=$(realpath ./lib/)
 
 #CFLAGS+=-ffunction-sections
 
@@ -91,6 +91,16 @@ clean:
 	@rm -rf ${COMPILER} ${wildcard *~}
 
 #
+# Rule to remove intermediate build objects to avoid confusing students.
+#
+remove_objects:
+	@rm -f ${COMPILER}/*[^.bin]
+
+# Because this project is so small, build speed impact is negligible.
+# We want to make the process as clear as possible to students by only having the important, final files present.
+all: remove_objects
+
+#
 # The rule to create the target directory.
 #
 ${COMPILER}:
@@ -99,14 +109,14 @@ ${COMPILER}:
 #
 # Rules for building the project example.
 #
-${COMPILER}/main.axf: $(realpath ../lib/)/usart.o
-${COMPILER}/main.axf: $(realpath ../lib/)/mitre_car.o
-${COMPILER}/main.axf: $(realpath ../lib/)/util.o
+${COMPILER}/main.axf: $(realpath ./lib/)/usart.o
+${COMPILER}/main.axf: $(realpath ./lib/)/mitre_car.o
+${COMPILER}/main.axf: $(realpath ./lib/)/util.o
 ${COMPILER}/main.axf: ${COMPILER}/uart.o
 ${COMPILER}/main.axf: ${COMPILER}/firmware.o
 ${COMPILER}/main.axf: ${STELLARIS}/driverlib/${COMPILER}-cm3/libdriver-cm3.a
-${COMPILER}/main.axf: $(realpath ../)/firmware.ld
-SCATTERgcc_main=$(realpath ../)/firmware.ld
+${COMPILER}/main.axf: $(realpath ./)/firmware.ld
+SCATTERgcc_main=$(realpath ./)/firmware.ld
 ENTRY_main=main
 
 driverlib:
