@@ -10,12 +10,12 @@
 #include "driverlib/sysctl.h"    // System control API (clock/reset)
 
 // Library Imports
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 // Application Imports
-#include "uart.h"
 #include "beaverssl.h"
+#include "uart.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -33,25 +33,25 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define FLASH_WRITESIZE 4
 
 // Protocol Constants
-#define OK         ((uint8_t)(0x00))
-#define ERROR      ((uint8_t)(0x1))
+#define OK ((uint8_t)(0x00))
+#define ERROR ((uint8_t)(0x1))
 
 // Added just so the code can still compile
-#define UPDATE     ((unsigned char)'U')
-#define BOOT       ((unsigned char)'B')
+#define UPDATE ((unsigned char)'U')
+#define BOOT ((unsigned char)'B')
 
-#define META       ((uint8_t)(0x2))
-#define CHUNK      ((uint8_t)(0x3))
-#define DONE       ((uint8_t)(0x4))
+#define META ((uint8_t)(0x2))
+#define CHUNK ((uint8_t)(0x3))
+#define DONE ((uint8_t)(0x4))
 #define FRAME_SIZE ((uint16_t)(0x10))
 
 // Size constants
-#define MAX_VERSION         65535
-#define MAX_MESSAGE_SIZE    1024
-#define MAX_FIRMWARE_SIZE   32768
-#define AES_KEY_LENGTH      32
-#define IV_LENGTH           16
-#define ECC_KEY_LENGTH      65
+#define MAX_VERSION 65535
+#define MAX_MESSAGE_SIZE 1024
+#define MAX_FIRMWARE_SIZE 32768
+#define AES_KEY_LENGTH 32
+#define IV_LENGTH 16
+#define ECC_KEY_LENGTH 65
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -62,19 +62,18 @@ extern int _binary_firmware_bin_size;
 uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
+void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
 
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
 
-struct crypto_keys_
-{
+struct crypto_keys_ {
     br_ec_public_key ec_public;
     uint8_t iv[IV_LENGTH];
     uint8_t aes[AES_KEY_LENGTH];
 } crypto_keys;
 
 int main(void) {
-
     // A 'reset' on UART0 will re-start this code at the top of main, won't
     // clear flash, but will clean ram.
 
@@ -104,6 +103,9 @@ int main(void) {
         if (instruction == UPDATE) {
             uart_write_str(UART1, "U");
             load_firmware();
+            // upstream
+            uart_write_str(UART2, "Loaded new firmware.\n");
+            nl(UART2);
         } else if (instruction == BOOT) {
             uart_write_str(UART1, "B");
             boot_firmware();
@@ -200,7 +202,7 @@ void load_firmware(void) {
     uint32_t version = 0;
     uint32_t size = 0;
 
-    // Get version.
+    // Get version as 16 bytes
     rcv = uart_read(UART1, BLOCKING, &read);
     version = (uint32_t)rcv;
     rcv = uart_read(UART1, BLOCKING, &read);
@@ -210,7 +212,7 @@ void load_firmware(void) {
     uart_write_hex(UART2, version);
     nl(UART2);
 
-    // Get size.
+    // Get size as 16 bytes
     rcv = uart_read(UART1, BLOCKING, &read);
     size = (uint32_t)rcv;
     rcv = uart_read(UART1, BLOCKING, &read);
@@ -251,19 +253,32 @@ void load_firmware(void) {
         frame_length += (int)rcv;
 
         // Write length debug message
-        uart_write_hex(UART2, frame_length);
-        nl(UART2);
+        // TODO: not in upstream, needed?
+        // uart_write_hex(UART2, frame_length);
+        // nl(UART2);
 
         // Get the number of bytes specified
         for (int i = 0; i < frame_length; ++i) {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
-        } 
+        }
 
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0) {
+            if (frame_length == 0) {
+                uart_write_str(UART2, "Got zero length frame.\n");
+            }
+
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)) {
+                uart_write(UART1, ERROR); // Reject the firmware
+                SysCtlReset();            // Reset device
+                return;
+            }
+
+            // Verify flash program
+            if (memcmp(data, (void*)page_addr, data_index) != 0) {
+                uart_write_str(UART2, "Flash check failed.\n");
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
                 return;
@@ -350,4 +365,29 @@ void boot_firmware(void) {
     // Boot the firmware
     __asm("LDR R0,=0x10001\n\t"
           "BX R0\n\t");
+}
+
+void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
+    for (uint8_t* cursor = start; cursor < (start + len); cursor += 1) {
+        uint8_t data = *((uint8_t*)cursor);
+        uint8_t right_nibble = data & 0xF;
+        uint8_t left_nibble = (data >> 4) & 0xF;
+        char byte_str[3];
+        if (right_nibble > 9) {
+            right_nibble += 0x37;
+        } else {
+            right_nibble += 0x30;
+        }
+        byte_str[1] = right_nibble;
+        if (left_nibble > 9) {
+            left_nibble += 0x37;
+        } else {
+            left_nibble += 0x30;
+        }
+        byte_str[0] = left_nibble;
+        byte_str[2] = '\0';
+
+        uart_write_str(uart, byte_str);
+        uart_write_str(uart, " ");
+    }
 }
