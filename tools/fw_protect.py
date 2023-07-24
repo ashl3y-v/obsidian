@@ -21,6 +21,7 @@ MAX_VERSION = 65535
 MAX_MESSAGE_SIZE = 1024
 MAX_FIRMWARE_SIZE = 32768
 
+AES_KEY_LENGTH = 32
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
@@ -35,7 +36,8 @@ def protect_firmware(infile, outfile, version, message):
     # Extract keys from secret build output [AES | ECC priv]
     # Public key not needed for signing so not loaded
     with open(CRYPTO_DIR / "secret_build_output.txt", mode="rb") as secfile:
-        aes_key, priv_key = secfile.read().splitlines()
+        aes_key = secfile.read(AES_KEY_LENGTH)
+        priv_key = secfile.read()
         priv_key = ECC.import_key(priv_key)
 
     # Extract automatically generated initalization vector (IV) / nonce
@@ -77,3 +79,4 @@ if __name__ == "__main__":
         version=int(args.version),
         message=args.message,
     )
+    print("!")
