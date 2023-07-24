@@ -53,6 +53,7 @@ Mkfile.old
 dkms.conf
 
 # Output files generated from bl_build.py
-secret_build_output.txt
-iv.txt
-ecc_public.der
+*.txt
+*.raw
+*.pyc
+*.axf
