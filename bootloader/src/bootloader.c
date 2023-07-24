@@ -92,7 +92,6 @@ int main(void) {
         if (instruction == UPDATE) {
             uart_write_str(UART1, "U");
             load_firmware();
-            // upstream
             uart_write_str(UART2, "Loaded new firmware.\n");
             nl(UART2);
         } else if (instruction == BOOT) {
@@ -240,11 +239,6 @@ void load_firmware(void) {
         frame_length = (int)rcv << 8;
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length += (int)rcv;
-
-        // Write length debug message
-        // TODO: not in upstream, needed?
-        // uart_write_hex(UART2, frame_length);
-        // nl(UART2);
 
         // Get the number of bytes specified
         for (int i = 0; i < frame_length; ++i) {

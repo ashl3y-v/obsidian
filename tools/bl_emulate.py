@@ -7,7 +7,7 @@ import argparse
 import pathlib
 import subprocess
 import os
-from util import *
+from util import UART0_PATH, UART1_PATH, UART2_PATH
 
 
 def emulate(binary_path, debug=False):
@@ -19,7 +19,7 @@ def emulate(binary_path, debug=False):
     uart_paths = ["/embsec/UART0", "/embsec/UART1", "/embsec/UART2"]
     for i in range(3):
         cmd.extend(["-serial", f"unix:{uart_paths[i]},server"])
-    
+
     # Try to kill and delete leftover stuff before starting qemu
     os.system("pkill qemu")
     try:
@@ -36,18 +36,27 @@ def emulate(binary_path, debug=False):
         os.system(f"rm -rf {UART2_PATH}")
     except:
         pass
+
     os.system("rm -rf /flash/*")
-    
+
     subprocess.Popen(cmd)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Stellaris Emulator")
-    parser.add_argument("--boot-path", help="Path to the the bootloader binary.", default=None)
-    parser.add_argument("--debug", help="Start GDB server and break on first instruction", action="store_true")
+    parser.add_argument(
+        "--boot-path", help="Path to the the bootloader binary.", default=None
+    )
+    parser.add_argument(
+        "--debug",
+        help="Start GDB server and break on first instruction",
+        action="store_true",
+    )
     args = parser.parse_args()
     if args.boot_path is None:
-        binary_path = (pathlib.Path(__file__).parent / ".." / "bootloader" / "gcc" / "main.axf")
+        binary_path = (
+            pathlib.Path(__file__).parent / ".." / "bootloader" / "gcc" / "main.axf"
+        )
     else:
         binary_path = pathlib.Path(args.boot_path)
 
