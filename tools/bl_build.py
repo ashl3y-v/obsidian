@@ -9,7 +9,7 @@ import argparse
 import os
 import pathlib
 import shutil
-from util import arrayize 
+from util import arrayize
 
 from Crypto.PublicKey import ECC
 from Crypto.Random import get_random_bytes
@@ -18,10 +18,11 @@ from subprocess import run, call
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 TOOL_DIR = pathlib.Path(__file__).parent.absolute()
 BOOTLOADER_DIR = ROOT_DIR / "bootloader"
-FIRMWARE_DIR = ROOT_DIR / "firmware/firmware"
+FIRMWARE_DIR = ROOT_DIR / "firmware"
 
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
+
 
 def copy_initial_firmware(binary_path):
     # Navigate to our tool directory
@@ -36,7 +37,6 @@ def copy_initial_firmware(binary_path):
 
 
 def make_bootloader(**keys) -> bool:
-   
     # Navigate to bootloader directory
     os.chdir(BOOTLOADER_DIR)
 
@@ -45,14 +45,14 @@ def make_bootloader(**keys) -> bool:
 
     # Create a make command incluidng all the keys passed
     command = "make "
-    variables = [f"{x}='{arrayize(y)}'" for x, y in keys.items()] 
+    variables = [f"{x}='{arrayize(y)}'" for x, y in keys.items()]
     for variable in variables:
         print(variable)
         command += variable + " "
 
-    # Error checking 
+    # Error checking
     # print(f"command: \n\t{command}")
-    call('make clean', shell=True)
+    call("make clean", shell=True)
     status = call(command, shell=True)
     if status == 0:
         print(f"Compiled binary located at {BOOTLOADER_DIR}")
@@ -75,7 +75,7 @@ def generate_secrets():
         # ECC key pair generation
         ecc_private = ECC.generate(curve="secp256r1")
         ecc_public = ecc_private.public_key()
-        exported_public = ecc_public.export_key(format='raw')
+        exported_public = ecc_public.export_key(format="raw")
 
         # Write our AES and ECC private key and close for safety
         with open(crypto / "secret_build_output.txt", mode="wb") as file:
@@ -96,7 +96,7 @@ def generate_secrets():
             file.write(b"#define SECRETS_H\n\n")
 
             file.write(b"// Needed for ECC Public Key structure\n")
-            file.write(b"#include \"beaverssl.h\"\n\n")
+            file.write(b'#include "beaverssl.h"\n\n')
 
             file.write(b"// Size constants\n")
             file.write(b"#define MAX_VERSION 65535\n")
@@ -106,22 +106,24 @@ def generate_secrets():
             file.write(b"#define IV_KEY_LENGTH 16\n")
             file.write(b"#define ECC_KEY_LENGTH 65\n\n")
 
-
-            file.write(f"const uint8_t AES_KEY[AES_KEY_LENGTH] = {arrayize(aes)};\n".encode())
-            file.write(f"const uint8_t IV_KEY[IV_KEY_LENGTH] = {arrayize(iv)};\n".encode())
-            file.write(f"const uint8_t ECC_PUBLIC_KEY[ECC_KEY_LENGTH] = {arrayize(exported_public)};\n".encode())
-            file.write(b"const br_ec_public_key EC_PUBLIC = (const br_ec_public_key){\n")
+            file.write(
+                f"const uint8_t AES_KEY[AES_KEY_LENGTH] = {arrayize(aes)};\n".encode()
+            )
+            file.write(
+                f"const uint8_t IV_KEY[IV_KEY_LENGTH] = {arrayize(iv)};\n".encode()
+            )
+            file.write(
+                f"const uint8_t ECC_PUBLIC_KEY[ECC_KEY_LENGTH] = {arrayize(exported_public)};\n".encode()
+            )
+            file.write(
+                b"const br_ec_public_key EC_PUBLIC = (const br_ec_public_key){\n"
+            )
             file.write(b"\t.curve = BR_EC_secp256r1,\n")
             file.write(b"\t.q = (void*)(ECC_PUBLIC_KEY),\n")
             file.write(b"\t.qlen = sizeof(ECC_PUBLIC_KEY)\n};")
             file.write(b"\n#endif")
 
-        return {
-            "AES_KEY": aes,
-            "IV_KEY": iv,
-            "ECC_PUBLIC_KEY": exported_public  
-        }
-
+        return {"AES_KEY": aes, "IV_KEY": iv, "ECC_PUBLIC_KEY": exported_public}
 
     # No point of trying to compile if we don't have any secrets
     except Exception as excep:
@@ -159,9 +161,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Bootloader Build Tool")
-    parser.add_argument(
-        "--initial-firmware",
-        help="Path to the the firmware binary."
-    )
+    parser.add_argument("--initial-firmware", help="Path to the the firmware binary.")
     args = parser.parse_args()
     main(args)
