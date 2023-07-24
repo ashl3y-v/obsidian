@@ -79,4 +79,3 @@ if __name__ == "__main__":
         version=int(args.version),
         message=args.message,
     )
-    print("!")
