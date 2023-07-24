@@ -22,10 +22,6 @@ BOOTLOADER_DIR = ROOT_DIR / "bootloader"
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
-AES_KEY = None
-IV_KEY = None
-ECC_PUBLIC_KEY = None
-
 def copy_initial_firmware(binary_path):
     # Navigate to our tool directory
     os.chdir(TOOL_DIR)
@@ -119,7 +115,6 @@ def generate_secrets():
             file.write(b"\t.qlen = sizeof(ECC_PUBLIC_KEY)\n};")
             file.write(b"\n#endif")
 
-
         return {
             "AES_KEY": aes,
             "IV_KEY": iv,
@@ -144,7 +139,6 @@ def main(args):
         binary_path = ROOT_DIR / "firmware" / "gcc" / "main.bin"
         os.chdir(firmware_path)
 
-        print('bleh')
         run("make clean", shell=True)
         run("make")
     else:
