@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-
 """
-bl_build.py --initial-firmware <binary_path>
+Bootloader Build Tool
 
 This tool is responsible for setting up the firmware location and compiling C source code to generate a bootloader binary file.
 """
@@ -11,29 +10,33 @@ import os
 import pathlib
 import shutil
 
-from pwn import *
-from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Signature import eddsa
 from Crypto.PublicKey import ECC
-from Crypto.Signature import DSS
-from Crypto.Hash import SHA256
 from subprocess import run
 
-TOOL_DIR = pathlib.Path(__file__).parent.absolute()
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
+TOOL_DIR = pathlib.Path(__file__).parent.absolute()
+BOOTLOADER_DIR = ROOT_DIR / "bootloader"
+
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
 
-def arrayize(binary_string):
-    return "{" + ",".join([hex(char) for char in binary_string]) + "}"
+def copy_initial_firmware(binary_path):
+    # Navigate to our tool directory
+    os.chdir(TOOL_DIR)
+
+    # Copy generated firmware to build directory
+    try:
+        shutil.copy(binary_path, BOOTLOADER_DIR / "src/firmware.bin")
+    except Exception as excep:
+        print(f"{excep}")
+        exit(FIRMWARE_ERROR)
 
 
-def compile_bootloader():
+def make_bootloader() -> bool:
     # Navigate to bootloader directory
-    bootloader = ROOT_DIR / "bootloader"
-    os.chdir(bootloader)
+    os.chdir(BOOTLOADER_DIR)
 
     # Delete any previous executables and compile
     run("make clean", shell=True)
@@ -41,28 +44,18 @@ def compile_bootloader():
     # Error checking
     status = run("make").returncode
     if status == 0:
-        print(f"Compiled binary located at {bootloader}")
+        print(f"Compiled binary located at {BOOTLOADER_DIR}")
     else:
         print("Failed to compile, check output for errors.")
 
-
-def copy_firmware(firmware_path):
-    # Navigate to our tool directory
-    os.chdir(TOOL_DIR)
-
-    # Copy generated firmware to build directory
-    bootloader = ROOT_DIR / "bootloader"
-    try:
-        shutil.copy(firmware_path, bootloader / "src" / "firmware.bin")
-    except Exception as excep:
-        print(f"{excep}")
-        exit(FIRMWARE_ERROR)
+    # Return True if make returned 0, otherwise return False.
+    return status == 0
 
 
 def generate_secrets():
     try:
         # Get the directory to store generated files
-        crypto = ROOT_DIR / "bootloader" / "crypto"
+        crypto = BOOTLOADER_DIR / "crypto"
 
         # Generate our random symmetric AES key & initalization vector
         aes = get_random_bytes(32)
@@ -94,7 +87,8 @@ def generate_secrets():
 
 
 def main(args):
-    # Build and use default firmware if none is provided, otherwise look for the binary at the path specificed
+    # Build and use default firmware if none is provided,
+    # otherwise look for the binary at the path specified
     if args.initial_firmware is None:
         firmware_path = ROOT_DIR / "firmware" / "firmware"
         binary_path = ROOT_DIR / "firmware" / "firmware" / "gcc" / "main.bin"
@@ -114,17 +108,16 @@ def main(args):
         )
 
     generate_secrets()
-    copy_firmware(binary_path)
-    compile_bootloader()
+    copy_initial_firmware(binary_path)
+    make_bootloader()
 
 
 if __name__ == "__main__":
-    # Setup arguments for our application
-    parser = argparse.ArgumentParser(description="Firmware Build Tool")
+    parser = argparse.ArgumentParser(description="Bootloader Build Tool")
     parser.add_argument(
         "--initial-firmware",
-        help="A path to the compiled firmware binary",
-        default=None,
+        help="Path to the the firmware binary.",
+        default=ROOT_DIR / "firmware/gcc/main.bin",
     )
     args = parser.parse_args()
 
