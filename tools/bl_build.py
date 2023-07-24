@@ -75,7 +75,7 @@ def generate_secrets():
         # ECC key pair generation
         ecc_private = ECC.generate(curve="secp256r1")
         ecc_public = ecc_private.public_key()
-        exported_public = ecc_public.export_key(format='raw')
+        exported_public = ecc_public.export_key(format='DER')
 
         # Write our AES and ECC private key and close for safety
         with open(crypto / "secret_build_output.txt", mode="wb") as file:
@@ -83,7 +83,7 @@ def generate_secrets():
             file.write(ecc_private.export_key(format="DER"))
 
         # Create a .RAW file to store our RAW public key
-        with open(crypto / "ecc_public.raw", mode="wb") as file:
+        with open(crypto / "ecc_public.der", mode="wb") as file:
             file.write(exported_public + b"\n")
 
         # Lastly, store our IV
