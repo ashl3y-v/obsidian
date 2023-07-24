@@ -51,7 +51,8 @@ def make_bootloader(**keys) -> bool:
         command += variable + " "
 
     # Error checking 
-    # print(f"command: \n\t{command}")
+    print(f"command: \n\t{command}")
+
     call('make clean', shell=True)
     status = call(command, shell=True)
     if status == 0:
@@ -79,8 +80,8 @@ def generate_secrets():
 
         # Write our AES and ECC private key and close for safety
         with open(crypto / "secret_build_output.txt", mode="wb") as file:
-            file.write(aes + b"\n")
-            file.write(ecc_private.export_key(format="DER"))
+            file.write(aes)
+            file.write(bytes(ecc_private.export_key(format="PEM").encode()) + b"\n")
 
         # Create a .RAW file to store our RAW public key
         with open(crypto / "ecc_public.der", mode="wb") as file:
