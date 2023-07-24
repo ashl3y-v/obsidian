@@ -115,7 +115,7 @@ def update(ser, infile, debug):
     firmware = firmware_blob[70:]
 
     # Check for integrity compromise using ECC public key signature
-    f = open(CRYPTO_DIRECTORY / "ecc_public.der", "rt", encoding='unicode_escape')
+    f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rt")
     sigkey = ECC.import_key(f.read())
     h = SHA256.new(metadata + firmware)
     verifier = DSS.new(sigkey, "fips-186-3")
