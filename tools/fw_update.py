@@ -148,17 +148,29 @@ def main(ser, infile, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Firmware Update Tool")
 
-    parser.add_argument(
-        "--port", help="Serial port to send update over.", required=True
-    )
-    parser.add_argument(
-        "--firmware", help="Path to firmware image to load.", required=True
-    )
-    parser.add_argument(
-        "--debug", help="Enable debugging messages.", action="store_true"
-    )
+    parser.add_argument("--port", help="Does nothing, included to adhere to command examples in rule doc", required=False)
+    parser.add_argument("--firmware", help="Path to firmware image to load.", required=False)
+    parser.add_argument("--debug", help="Enable debugging messages.", action="store_true")
     args = parser.parse_args()
 
-    print("Opening serial port...")
-    ser = Serial(args.port, baudrate=115200, timeout=2)
-    main(ser=ser, infile=args.firmware, debug=args.debug)
+    uart0_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    uart0_sock.connect(UART0_PATH)
+
+    time.sleep(0.2)  # QEMU takes a moment to open the next socket
+
+    uart1_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    uart1_sock.connect(UART1_PATH)
+    uart1 = DomainSocketSerial(uart1_sock)
+
+    time.sleep(0.2)
+
+    uart2_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    uart2_sock.connect(UART2_PATH)
+
+    # Close unused UARTs (if we leave these open it will hang)
+    uart2_sock.close()
+    uart0_sock.close()
+
+    update(ser=uart1, infile=args.firmware, debug=args.debug)
+
+    uart1_sock.close()
