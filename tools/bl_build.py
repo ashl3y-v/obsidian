@@ -11,13 +11,14 @@ import pathlib
 import shutil
 from util import arrayize 
 
-from Crypto.Random import get_random_bytes
 from Crypto.PublicKey import ECC
+from Crypto.Random import get_random_bytes
 from subprocess import run, call
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 TOOL_DIR = pathlib.Path(__file__).parent.absolute()
 BOOTLOADER_DIR = ROOT_DIR / "bootloader"
+FIRMWARE_DIR = ROOT_DIR / "firmware/firmware"
 
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
@@ -135,9 +136,8 @@ def main(args):
     # otherwise look for the binary at the path specified
     print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
-        firmware_path = ROOT_DIR / "firmware" 
-        binary_path = ROOT_DIR / "firmware" / "gcc" / "main.bin"
-        os.chdir(firmware_path)
+        binary_path = ROOT_DIR / "firmware" / "firmware" / "gcc" / "main.bin"
+        os.chdir(FIRMWARE_DIR)
 
         run("make clean", shell=True)
         run("make")
