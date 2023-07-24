@@ -111,8 +111,8 @@ def update(ser, infile, debug):
 
     # Parse firmware blob
     signature = firmware_blob[0:64]
-    metadata = firmware_blob[64:68]
-    firmware = firmware_blob[68:]
+    metadata = firmware_blob[64:70]
+    firmware = firmware_blob[70:]
 
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rt")
@@ -145,7 +145,7 @@ def update(ser, infile, debug):
         if debug:
             print(f"Wrote frame {idx} ({len(frame)} bytes)...")
 
-    print("Done writing firmware.")
+    print("Done (1).")
     ser.write(DONE)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
@@ -159,7 +159,7 @@ def update(ser, infile, debug):
             )
         )
 
-    print("Wrote zero length frame")
+    print("Done (2).")
 
     return ser
 
