@@ -9,10 +9,11 @@ import argparse
 import os
 import pathlib
 import shutil
+from util import arrayize 
 
 from Crypto.Random import get_random_bytes
 from Crypto.PublicKey import ECC
-from subprocess import run
+from subprocess import run, call
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 TOOL_DIR = pathlib.Path(__file__).parent.absolute()
@@ -21,6 +22,9 @@ BOOTLOADER_DIR = ROOT_DIR / "bootloader"
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
+AES_KEY = None
+IV_KEY = None
+ECC_PUBLIC_KEY = None
 
 def copy_initial_firmware(binary_path):
     # Navigate to our tool directory
@@ -34,15 +38,25 @@ def copy_initial_firmware(binary_path):
         exit(FIRMWARE_ERROR)
 
 
-def make_bootloader() -> bool:
+def make_bootloader(**keys) -> bool:
+   
     # Navigate to bootloader directory
     os.chdir(BOOTLOADER_DIR)
 
     # Delete any previous executables and compile
     run("make clean", shell=True)
 
-    # Error checking
-    status = run("make").returncode
+    # Create a make command incluidng all the keys passed
+    command = "make "
+    variables = [f"{x}='{arrayize(y)}'" for x, y in keys.items()] 
+    for variable in variables:
+        print(variable)
+        command += variable + " "
+
+    # Error checking 
+    # print(f"command: \n\t{command}")
+    call('make clean', shell=True)
+    status = call(command, shell=True)
     if status == 0:
         print(f"Compiled binary located at {BOOTLOADER_DIR}")
     else:
@@ -64,6 +78,7 @@ def generate_secrets():
         # ECC key pair generation
         ecc_private = ECC.generate(curve="secp256r1")
         ecc_public = ecc_private.public_key()
+        exported_public = ecc_public.export_key(format='raw')
 
         # Write our AES and ECC private key and close for safety
         with open(crypto / "secret_build_output.txt", mode="wb") as file:
@@ -72,11 +87,45 @@ def generate_secrets():
 
         # Create a .RAW file to store our RAW public key
         with open(crypto / "ecc_public.raw", mode="wb") as file:
-            file.write(ecc_public.export_key(format="raw") + b"\n")
+            file.write(exported_public + b"\n")
 
         # Lastly, store our IV
         with open(crypto / "iv.txt", mode="wb") as file:
             file.write(iv + b"\n")
+
+        # Temporary (but ugly) fix because Makefile command line constants are not working
+        with open(crypto / "secrets.h", mode="wb") as file:
+            file.write(b"#ifndef SECRETS_H\n")
+            file.write(b"#define SECRETS_H\n\n")
+
+            file.write(b"// Needed for ECC Public Key structure\n")
+            file.write(b"#include \"beaverssl.h\"\n\n")
+
+            file.write(b"// Size constants\n")
+            file.write(b"#define MAX_VERSION 65535\n")
+            file.write(b"#define MAX_MESSAGE_SIZE 1024\n")
+            file.write(b"#define MAX_FIRMWARE_SIZE 32768\n")
+            file.write(b"#define AES_KEY_LENGTH 32\n")
+            file.write(b"#define IV_KEY_LENGTH 16\n")
+            file.write(b"#define ECC_KEY_LENGTH 65\n\n")
+
+
+            file.write(f"const uint8_t AES_KEY[AES_KEY_LENGTH] = {arrayize(aes)};\n".encode())
+            file.write(f"const uint8_t IV_KEY[IV_KEY_LENGTH] = {arrayize(iv)};\n".encode())
+            file.write(f"const uint8_t ECC_PUBLIC_KEY[ECC_KEY_LENGTH] = {arrayize(exported_public)};\n".encode())
+            file.write(b"const br_ec_public_key EC_PUBLIC = (const br_ec_public_key){\n")
+            file.write(b"\t.curve = BR_EC_secp256r1,\n")
+            file.write(b"\t.q = (void*)(ECC_PUBLIC_KEY),\n")
+            file.write(b"\t.qlen = sizeof(ECC_PUBLIC_KEY)\n};")
+            file.write(b"\n#endif")
+
+
+        return {
+            "AES_KEY": aes,
+            "IV_KEY": iv,
+            "ECC_PUBLIC_KEY": exported_public  
+        }
+
 
     # No point of trying to compile if we don't have any secrets
     except Exception as excep:
@@ -89,11 +138,13 @@ def generate_secrets():
 def main(args):
     # Build and use default firmware if none is provided,
     # otherwise look for the binary at the path specified
+    print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
-        firmware_path = ROOT_DIR / "firmware" / "firmware"
-        binary_path = ROOT_DIR / "firmware" / "firmware" / "gcc" / "main.bin"
+        firmware_path = ROOT_DIR / "firmware" 
+        binary_path = ROOT_DIR / "firmware" / "gcc" / "main.bin"
         os.chdir(firmware_path)
 
+        print('bleh')
         run("make clean", shell=True)
         run("make")
     else:
@@ -107,18 +158,16 @@ def main(args):
             )
         )
 
-    generate_secrets()
+    secrets = generate_secrets()
     copy_initial_firmware(binary_path)
-    make_bootloader()
+    make_bootloader(**secrets)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Bootloader Build Tool")
     parser.add_argument(
         "--initial-firmware",
-        help="Path to the the firmware binary.",
-        default=ROOT_DIR / "firmware/gcc/main.bin",
+        help="Path to the the firmware binary."
     )
     args = parser.parse_args()
-
     main(args)
