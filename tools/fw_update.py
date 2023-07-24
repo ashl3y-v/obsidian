@@ -145,7 +145,7 @@ def update(ser, infile, debug):
         if debug:
             print(f"Wrote frame {idx} ({len(frame)} bytes)...")
 
-    print("Done writing firmware.")
+    print("Done (1).")
     ser.write(DONE)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
@@ -159,7 +159,7 @@ def update(ser, infile, debug):
             )
         )
 
-    print("Wrote zero length frame")
+    print("Done (2).")
 
     return ser
 
