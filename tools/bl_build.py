@@ -136,7 +136,7 @@ def main(args):
     # otherwise look for the binary at the path specified
     print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
-        binary_path = ROOT_DIR / "firmware" / "firmware" / "gcc" / "main.bin"
+        binary_path = ROOT_DIR / "firmware" / "gcc" / "main.bin"
         os.chdir(FIRMWARE_DIR)
 
         run("make clean", shell=True)
