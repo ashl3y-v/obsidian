@@ -48,7 +48,7 @@ CRYPTO_DIRECTORY = (
 def send_metadata(ser, metadata, debug=False):
     # Parse version information
     version, size = struct.unpack_from("<HH", metadata)
-    print(f"Version: {version}\nSize: {size} bytes\n")
+    print(f"Version: {int(version)}\nSize: {int(size)} bytes\n")
 
     # Prevent debug abuse
     if version == 0 and not debug:
