@@ -82,7 +82,7 @@ def generate_secrets():
         # Write our AES and ECC private key and close for safety
         with open(CRYPTO_DIR / "secret_build_output.txt", mode="wb") as file:
             file.write(aes)
-            file.write(bytes(ecc_private.export_key(format="DER")))
+            file.write(bytes(ecc_private.export_key(format="PEM").encode()))
 
         # Create a .RAW file to store our RAW public key
         with open(CRYPTO_DIR / "ecc_public.raw", mode="wb") as file:
