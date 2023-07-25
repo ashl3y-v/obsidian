@@ -3,10 +3,18 @@
     "tasks": [
         {
             "label": "runAll",
-            "dependsOrder": "parallel",
+            "dependsOrder": "sequence",
             "dependsOn": [
                 "Build",
                 "Protect",
+                "secondPart"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "secondPart",
+            "dependsOrder": "parallel",
+            "dependsOn": [
                 "Emulate",
                 "UART0",
                 "UART1",
