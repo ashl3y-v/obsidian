@@ -11,13 +11,15 @@
 
 // Library Imports
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
+
+#include <stdarg.h>
 
 
 // Application Imports
 #include "uart.h"
 #include "../crypto/secrets.h"
+#include "structures.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -35,18 +37,19 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define FLASH_WRITESIZE 4
 
 // Protocol Constants
-#define OK          ((uint8_t)('O'))
-#define ERROR       ((uint8_t)('E'))
-#define UPDATE      ((uint8_t)('U'))
-#define BOOT        ((uint8_t)('B'))
-#define META        ((uint8_t)('M'))
-#define CHUNK       ((uint8_t)('C'))
-#define DONE        ((uint8_t)('D'))
-#define FRAME_SIZE  ((uint16_t)(0x10))
+#define OK          ((uint16_t)('O'))
+#define ERROR       ((uint16_t)('E'))
+#define UPDATE      ((uint16_t)('U'))
+#define BOOT        ((uint16_t)('B'))
+#define META        ((uint16_t)('M'))
+#define CHUNK       ((uint16_t)('C'))
+#define DONE        ((uint16_t)('D'))
+#define FRAME_SIZE  ((uint16_t)(256))
 
-#define RESET 0
-#define INPUT 1
-#define OUTPUT 2
+#define READ_8(UART) uart_read(UART, BLOCKING, &read) 
+
+
+
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -57,7 +60,10 @@ extern int _binary_firmware_bin_size;
 uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
+
+void uart_write_formatted_str(uint8_t uart, const char* fmt, ...);
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
+bool update_firmware();
 
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
@@ -68,21 +74,21 @@ void init_interfaces()
     // Initalize  UART channels 0-2
 
     // Reset (INT 0)
-    uart_init(RESET); 
+    uart_init(UART0); 
     IntEnable(INT_UART0);
     IntMasterEnable();
 
     // Bootloader Interface
-    uart_init(INPUT); 
+    uart_init(UART1); 
 
     // Bootloader Output
-    uart_init(OUTPUT); 
+    uart_init(UART2); 
 
     // load_initial_firmware();
-    uart_write_str(OUTPUT, "Obsidian Update Interface\n");
-    uart_write_str(OUTPUT, 
+    uart_write_str(UART2, "Obsidian Update Interface\n");
+    uart_write_str(UART2, 
                         "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(OUTPUT, "Writing 0x20 to UART0 (space) will reset the device");
+    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device");
 }
 
 
@@ -93,22 +99,77 @@ int main(void)
     int read;
     while (true)
     {
-        uint8_t request = uart_read(INPUT, BLOCKING, &read);
-        printf("%x\n", request);
+        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        if (request == '\0')
+            continue;
+
+        // uart_write_str(UART1, (char*)(&request));
+        // nl(UART1);
+
         switch (request)
         {
             case UPDATE:
-                uart_write_str(OUTPUT, "Received a request to update firmware.\n");
+                uart_write(UART1, OK);
+                uart_write_str(UART2, "Received a request to update firmware.\n");
+                update_firmware();
                 break;
             case BOOT:
-                uart_write_str(OUTPUT, "Received a request to boot firmware.\n");
+                uart_write_str(UART2, "Received a request to boot firmware.\n");
                 break;
         }
     }
 }
 
+bool update_firmware()
+{
+    // Wait for metadata to be sent
+    int read;
+    while (true)
+    {
+        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        if (request == META)
+            break;
+    }
 
+    // Acknowledge that we are about to receive metadata
+    uart_write(UART1, OK);
+    uart_write_str(UART2, "META packet received on bootloader.\n");
+    
+    metadata data = {0};
 
+    uint32_t version = (uint32_t)uart_read(UART1, BLOCKING, &read);
+    version |= (uint32_t)uart_read(UART1, BLOCKING, &read) << 8;
+
+    uint32_t size = (uint32_t)uart_read(UART1, BLOCKING, &read);
+    size |= (uint32_t)uart_read(UART1, BLOCKING, &read) << 8;
+
+    uint32_t message_size = (uint32_t)uart_read(UART1, BLOCKING, &read);
+    message_size |= (uint32_t)uart_read(UART1, BLOCKING, &read) << 8;
+
+    data = (metadata)
+    {
+        .version = version,
+        .size = size,
+        .message_size = message_size
+    };
+    uart_write_str(UART2, "Received version: ");
+
+    char buffer[5];
+    itoa(data.version, buffer, 10);
+
+    uart_write_str(UART2, buffer);
+    nl(UART2);
+
+    uart_write_str(UART2, "Received firmware size: ");
+    uart_write_str(UART2, buffer);
+    nl(UART2);
+
+    uart_write_str(UART2, "Received message size: ");
+    itoa(data.message_size, buffer, 10);
+    uart_write_str(UART2, buffer
+    );
+    nl(UART2);
+}
 /*
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
