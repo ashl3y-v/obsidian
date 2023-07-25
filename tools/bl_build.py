@@ -91,6 +91,7 @@ def generate_secrets():
         # Lastly, store our IV
         with open(CRYPTO_DIR / "iv.txt", mode="wb") as file:
             file.write(iv)
+            
 
         # Temporary (but ugly) fix because Makefile command line constants are not working
         with open(CRYPTO_DIR / "secrets.h", mode="wb") as file:
