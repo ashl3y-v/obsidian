@@ -44,6 +44,9 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define DONE        ((uint8_t)('D'))
 #define FRAME_SIZE  ((uint16_t)(0x10))
 
+#define RESET 0
+#define INPUT 1
+#define OUTPUT 2
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -65,21 +68,21 @@ void init_interfaces()
     // Initalize  UART channels 0-2
 
     // Reset (INT 0)
-    uart_init(UART0); 
+    uart_init(RESET); 
     IntEnable(INT_UART0);
     IntMasterEnable();
 
     // Bootloader Interface
-    uart_init(UART1); 
+    uart_init(INPUT); 
 
     // Bootloader Output
-    uart_init(UART2); 
+    uart_init(OUTPUT); 
 
     // load_initial_firmware();
-    uart_write_str(UART2, "Obsidian Update Interface\n");
-    uart_write_str(UART2, 
+    uart_write_str(OUTPUT, "Obsidian Update Interface\n");
+    uart_write_str(OUTPUT, 
                         "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device");
+    uart_write_str(OUTPUT, "Writing 0x20 to UART0 (space) will reset the device");
 }
 
 
@@ -90,13 +93,16 @@ int main(void)
     int read;
     while (true)
     {
-        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        uint8_t request = uart_read(INPUT, BLOCKING, &read);
+        printf("%x\n", request);
         switch (request)
         {
             case UPDATE:
-                uart_write_str(UART0, "Received a request to update firmware.\n");
+                uart_write_str(OUTPUT, "Received a request to update firmware.\n");
+                break;
             case BOOT:
-                uart_write_str(UART0, "Received a request to boot firmware.\n");
+                uart_write_str(OUTPUT, "Received a request to boot firmware.\n");
+                break;
         }
     }
 }
