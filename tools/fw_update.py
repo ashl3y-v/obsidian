@@ -115,8 +115,12 @@ def update(ser, infile, debug):
     metadata = firmware_blob[64:70]
     firmware = firmware_blob[70:]
 
+    print("Connected!")
+    time.sleep(2)
+    ser.write(b'B')
+    print("sent!")
     # version = struct.unpack_from(metadata[:2], "<H")
-
+    """
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rb")
     sigkey = ECC.import_key(f.read(), curve_name="secp256r1")
@@ -166,6 +170,7 @@ def update(ser, infile, debug):
     print("Done (2).")
 
     return ser
+    """
 
 
 if __name__ == "__main__":
