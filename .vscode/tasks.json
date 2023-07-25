@@ -3,10 +3,18 @@
     "tasks": [
         {
             "label": "runAll",
-            "dependsOrder": "parallel",
+            "dependsOrder": "sequence",
             "dependsOn": [
                 "Build",
                 "Protect",
+                "secondPart"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "secondPart",
+            "dependsOrder": "parallel",
+            "dependsOn": [
                 "Emulate",
                 "UART0",
                 "UART1",
@@ -47,7 +55,7 @@
         {
             "label": "Update",
             "type": "shell",
-            "command": "python ./tools/fw_update.py --port 0 --firmware ./firmware/gcc/protected_firmware.bin",
+            "command": "python ./tools/fw_update.py --firmware ./firmware/gcc/protected_firmware.bin",
             "group": "build",
             "presentation": {
                 "panel": "dedicated"
