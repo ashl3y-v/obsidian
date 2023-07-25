@@ -18,7 +18,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "python ./tools/bl_build.py --initial-firmware ./firmware/gcc/main.bin",
+            "command": "python ./tools/bl_build.py",
             "group": "build",
             "presentation": {
                 "panel": "dedicated"
