@@ -1,95 +1,85 @@
 {
     "version": "2.0.0",
     "tasks": [
-		{
-			"label": "runAll",
-			"dependsOrder": "parallel",
-			"dependsOn": [
-				"Make",
-				"Build",
-				"Protect",
-				"Emulate",
-				"UART0",
-				"UART1",
-				"UART2",
-				"Update"
-			],
-			"problemMatcher": []
-		},
-		{
-			"label": "Make",
-			"type": "shell",
-			"command": "cd work/obsidian/firmware && make",
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "Build",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/bl_build.py --initial-firmware work/obsidian/firmware/gcc/main.bin",
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "Protect",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/fw_protect.py --infile work/obsidian/firmware/gcc/main.bin --version 2 --message \"amogus\" --outfile work/obsidian/firmware/gcc/protected_firmware.bin",
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "Emulate",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/caller.py",
-			"presentation": {
-				"panel": "dedicated"
-			},
-			
-			"problemMatcher": [
-				"$msCompile"
-			]
-		},
-		{
-			"label": "Update",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/fw_update.py --port 0 --firmware work/obsidian/firmware/gcc/protected_firmware.bin",
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated"
-			}
-		},
-		{
-			"label": "UART0",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/uartzero.py",
-			"presentation": {
-				"panel": "dedicated"
-			},
-			"problemMatcher": []
-		},
-		{
-			"label": "UART1",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/uartone.py",
-			"presentation": {
-				"panel": "dedicated"
-			},
-			"problemMatcher": []
-		},
-		{
-			"label": "UART2",
-			"type": "shell",
-			"command": "python ./work/obsidian/tools/uarttwo.py",
-			"presentation": {
-				"panel": "dedicated"
-			},
-			"problemMatcher": []
-		}
-	]
-  }
+        {
+            "label": "runAll",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "Make",
+                "Build",
+                "Protect",
+                "Emulate",
+                "UART0",
+                "UART1",
+                "UART2",
+                "Update"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "python ./tools/bl_build.py --initial-firmware ./firmware/gcc/main.bin",
+            "group": "build",
+            "presentation": {
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Protect",
+            "type": "shell",
+            "command": "python ./tools/fw_protect.py --infile ./firmware/gcc/main.bin --version 2 --message \"amogus\" --outfile ./firmware/gcc/protected_firmware.bin",
+            "group": "build",
+            "presentation": {
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Emulate",
+            "type": "shell",
+            "command": "python ./tools/caller.py",
+            "presentation": {
+                "panel": "dedicated"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+        {
+            "label": "Update",
+            "type": "shell",
+            "command": "python ./tools/fw_update.py --port 0 --firmware ./firmware/gcc/protected_firmware.bin",
+            "group": "build",
+            "presentation": {
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "UART0",
+            "type": "shell",
+            "command": "python ./tools/uartzero.py",
+            "presentation": {
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "UART1",
+            "type": "shell",
+            "command": "python ./tools/uartone.py",
+            "presentation": {
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "UART2",
+            "type": "shell",
+            "command": "python ./tools/uarttwo.py",
+            "presentation": {
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
