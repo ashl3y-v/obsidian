@@ -5,7 +5,6 @@
             "label": "runAll",
             "dependsOrder": "parallel",
             "dependsOn": [
-                
                 "Build",
                 "Protect",
                 "Emulate",
