@@ -69,6 +69,7 @@ def send_metadata(ser, metadata, debug=False):
         return ser"""
 
     # Send size and version to bootloader.
+    print("bruh")
     if debug:
         print(metadata)
 
@@ -76,7 +77,7 @@ def send_metadata(ser, metadata, debug=False):
     ser.write(metadata)
 
     # Wait for an OK from the bootloader.
-    resp = ser.read()
+    resp = ser.read(1)
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
@@ -114,9 +115,12 @@ def update(ser, infile, debug):
     metadata = firmware_blob[64:70]
     firmware = firmware_blob[70:]
 
+    version = struct.unpack_from(metadata[:2], "<H")
+
     # Check for integrity compromise using ECC public key signature
-    f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rt")
-    sigkey = ECC.import_key(f.read())
+    f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rb")
+    sigkey = ECC.import_key(f.read(), curve_name="secp256r1")
+
     h = SHA256.new(metadata + firmware)
     verifier = DSS.new(sigkey, "fips-186-3")
     try:
@@ -173,7 +177,8 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "--firmware", help="Path to firmware image to load.", required=False
+        "--firmware", help="Path to firmware image to load.", required=False,
+        default="../firmware/gcc/main.bin"
     )
     parser.add_argument(
         "--debug", help="Enable debugging messages.", action="store_true"
