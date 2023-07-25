@@ -140,7 +140,7 @@ def main(args):
     # otherwise look for the binary at the path specified
     print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
-        binary_path = ROOT_DIR / "firmware" / "gcc" / "main.bin"
+        binary_path = FIRMWARE_DIR / "gcc" / "main.bin"
         os.chdir(FIRMWARE_DIR)
 
         run("make clean", shell=True)
@@ -151,7 +151,7 @@ def main(args):
     # File doesn't exist/cannot be found
     if not os.path.isfile(binary_path):
         raise FileNotFoundError(
-            'ERROR: {} does not exist or is not a file. You may have to call "make" in the firmware directory.'.format(
+            "ERROR: {} does not exist or is not a file. Make may have failed.".format(
                 binary_path
             )
         )
