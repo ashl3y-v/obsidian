@@ -69,12 +69,11 @@ def send_metadata(ser, metadata, debug=False):
         pass
 
     ser.write(metadata)
-    if ser.read(HEADER) == ERROR:
-        message = ser.readline()
-        print(f"Something went wrong sending metadata: {message.decode('utf-8')}")
-        return False
-    else:
-        print("Metadata succesfully sent to bootloader")
+    print(ser.readline().decode('utf-8'))
+    print(u16(ser.read(2)))
+    print(u16(ser.read(2)))
+    print(u16(ser.read(2)))
+
     return True
 
 def send_frame(ser, frame, debug=False):
