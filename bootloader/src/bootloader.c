@@ -15,7 +15,6 @@
 #include <string.h>
 
 // Application Imports
-
 #include "uart.h"
 #include "../crypto/secrets.h"
 
@@ -35,17 +34,15 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define FLASH_WRITESIZE 4
 
 // Protocol Constants
-#define OK ((uint8_t)(0x00))
-#define ERROR ((uint8_t)(0x1))
+#define OK          ((uint8_t)('O'))
+#define ERROR       ((uint8_t)('E'))
+#define UPDATE      ((uint8_t)('U'))
+#define BOOT        ((uint8_t)('B'))
+#define META        ((uint8_t)('M'))
+#define CHUNK       ((uint8_t)('C'))
+#define DONE        ((uint8_t)('D'))
+#define FRAME_SIZE  ((uint16_t)(0x10))
 
-// Added just so the code can still compile
-#define UPDATE ((unsigned char)'U')
-#define BOOT ((unsigned char)'B')
-
-#define META ((uint8_t)(0x2))
-#define CHUNK ((uint8_t)(0x3))
-#define DONE ((uint8_t)(0x4))
-#define FRAME_SIZE ((uint16_t)(0x10))
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -58,6 +55,54 @@ uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
 
+// Firmware Buffer
+unsigned char data[FLASH_PAGESIZE];
+
+// Setup the bootloader for communication
+void init_interfaces()
+{
+    // Initalize  UART channels 0-2
+
+    // Reset (INT 0)
+    uart_init(UART0); 
+    IntEnable(INT_UART0);
+    IntMasterEnable();
+
+    // Bootloader Interface
+    uart_init(UART1); 
+
+    // Bootloader Output
+    uart_init(UART2); 
+
+    // load_initial_firmware();
+    uart_write_str(UART2, "Obsidian Update Interface\n");
+    uart_write_str(UART2, 
+                        "Send \"U\" to update, and \"B\" to run the firmware.\n");
+    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device");
+}
+
+
+int main(void) 
+{
+    init_interfaces();
+
+    int read;
+    while (true)
+    {
+        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        switch (request)
+        {
+            case UPDATE:
+                uart_write_str(UART0, "Received a request to update firmware.\n");
+            case BOOT:
+                uart_write_str(UART0, "Received a request to boot firmware.\n");
+        }
+    }
+}
+
+
+
+/*
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
 
@@ -101,17 +146,11 @@ int main(void) {
     }
 }
 
-/*
- * Load initial firmware into flash
- */
+
 void load_initial_firmware(void) {
 
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
-        /*
-         * Default Flash startup state is all FF since. Only load initial
-         * firmware when metadata page is all FF. Thus, exit if there has
-         * been a reset!
-         */
+       
         return;
     }
 
@@ -137,11 +176,6 @@ void load_initial_firmware(void) {
                       initial_data + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
     }
 
-    /* At end of firmware. Since the last page may be incomplete, we copy the
-     * initial release message into the unused space in the last page. If the
-     * firmware fully uses the last page, the release message simply is written
-     * to a new page.
-     */
 
     uint16_t rem_fw_bytes = size % FLASH_PAGESIZE;
     if (rem_fw_bytes == 0) {
@@ -177,9 +211,7 @@ void load_initial_firmware(void) {
     }
 }
 
-/*
- * Load the firmware into flash.
- */
+
 void load_firmware(void) {
     int frame_length = 0;
     int read = 0;
@@ -231,7 +263,7 @@ void load_firmware(void) {
 
     uart_write(UART1, OK); // Acknowledge the metadata.
 
-    /* Loop here until you can get all your characters and stuff */
+   
     while (1) {
 
         // Get two bytes for the length.
@@ -290,14 +322,6 @@ void load_firmware(void) {
     }                          // while(1)
 }
 
-/*
- * Program a stream of bytes to the flash.
- * This function takes the starting address of a 1KB page, a pointer to the
- * data to write, and the number of byets to write.
- *
- * This functions performs an erase of the specified flash page before writing
- * the data.
- */
 long program_flash(uint32_t page_addr, unsigned char* data,
                    unsigned int data_len) {
     uint32_t word = 0;
@@ -374,3 +398,5 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
         uart_write_str(uart, " ");
     }
 }
+
+*/
