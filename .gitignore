@@ -59,4 +59,6 @@ ecc_public.raw
 *.pyc
 *.axf
 secrets.h
-bootloader/crypto/*
+bootloader/crypto
+bootloader/gcc
+firmware/gcc
