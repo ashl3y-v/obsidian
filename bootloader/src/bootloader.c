@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 // Application Imports
 #include "uart.h"
 #include "../crypto/secrets.h"
