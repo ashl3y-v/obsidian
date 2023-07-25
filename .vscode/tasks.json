@@ -46,11 +46,14 @@
 		{
 			"label": "Emulate",
 			"type": "shell",
-			"command": "python ./work/obsidian/tools/bl_emulate.py",
+			"command": "python ./work/obsidian/tools/caller.py",
 			"presentation": {
 				"panel": "dedicated"
 			},
-			"problemMatcher": []
+			
+			"problemMatcher": [
+				"$msCompile"
+			]
 		},
 		{
 			"label": "Update",
@@ -64,7 +67,7 @@
 		{
 			"label": "UART0",
 			"type": "shell",
-			"command": "nc -U /embsec/UART0",
+			"command": "python ./work/obsidian/tools/uartzero.py",
 			"presentation": {
 				"panel": "dedicated"
 			},
@@ -73,7 +76,7 @@
 		{
 			"label": "UART1",
 			"type": "shell",
-			"command": "nc -U /embsec/UART1",
+			"command": "python ./work/obsidian/tools/uartone.py",
 			"presentation": {
 				"panel": "dedicated"
 			},
@@ -82,7 +85,7 @@
 		{
 			"label": "UART2",
 			"type": "shell",
-			"command": "nc -U ~/embsec/UART2",
+			"command": "python ./work/obsidian/tools/uarttwo.py",
 			"presentation": {
 				"panel": "dedicated"
 			},
