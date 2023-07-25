@@ -115,7 +115,7 @@ def update(ser, infile, debug):
     metadata = firmware_blob[64:70]
     firmware = firmware_blob[70:]
 
-    version = struct.unpack_from(metadata[:2], "<H")
+    # version = struct.unpack_from(metadata[:2], "<H")
 
     # Check for integrity compromise using ECC public key signature
     f = open(CRYPTO_DIRECTORY / "ecc_public.raw", "rb")
