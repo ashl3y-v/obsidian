@@ -18,8 +18,9 @@
 
 // Application Imports
 #include "uart.h"
-#include "../crypto/secrets.h"
+#include "utility.h"
 #include "structures.h"
+#include "../crypto/secrets.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -46,14 +47,6 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define DONE        ((uint16_t)('D'))
 #define FRAME_SIZE  ((uint16_t)(256))
 
-<<<<<<< HEAD
-#define READ_8(UART) uart_read(UART, BLOCKING, &read) 
-
-// Firmware flash thing
-unsigned char data[FLASH_PAGESIZE];
-
-=======
->>>>>>> cleanup and new header files
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
 extern int _binary_firmware_bin_start;
@@ -64,10 +57,10 @@ uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
 
+
 // Program functions
 void update_firmware();
-bool load_metadata();
-
+metadata load_metadata();
 
 // Setup the bootloader for communication
 void init_interfaces()
@@ -100,12 +93,6 @@ int main(void)
     while (true)
     {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
-        if (request == '\0')
-            continue;
-
-        // uart_write_str(UART1, (char*)(&request));
-        // nl(UART1);
-
         switch (request)
         {
             case UPDATE:
@@ -160,7 +147,17 @@ metadata load_metadata()
     uart_write_wrp(UART1, &(mdata.size), sizeof(uint16_t));
     uart_write_wrp(UART1, &(mdata.message_size), sizeof(uint16_t));
 
+    return mdata;
+}
 
+void update_firmware()
+{
+    metadata mdata = load_metadata();
+    if (!mdata.size)
+    {
+        uart_write_str(UART2, "Something went wrong trying to load the metadata; restarting device\n");
+        SysCtlReset();
+    }
 
     // Wait for firmware to be sent
     while (true)
@@ -175,19 +172,16 @@ metadata load_metadata()
     uart_write(UART1, OK);
 
     // whhhhoooooo here we go
-
-    int frame_length = 0;
+    uint16_t frame_length = 0;
     
     uint32_t rcv = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
 
     while (1){
+
         // Get the frame length
-        rcv = uart_read(UART1, BLOCKING, &read);
-        frame_length = (int)rcv << 8;
-        rcv = uart_read(UART1, BLOCKING, &read);
-        frame_length += (int)rcv;
+        uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
 
         // Get the frame bytes
         for (int i = 0; i < frame_length; ++i) {
@@ -197,10 +191,10 @@ metadata load_metadata()
         }
         
 
-        /////////////// If we filed our page buffer, program it
+        // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0) {
             uart_write_str(UART1, "new flash");
-            if (frame_length == 0) {
+            if (!frame_length) {
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
 
@@ -237,7 +231,7 @@ metadata load_metadata()
                 break;
             }
         } 
-        /////////////////
+        //
         
        
         
@@ -245,8 +239,6 @@ metadata load_metadata()
     }
         
 }
-
-
 
 /*
 int main(void) {
@@ -516,51 +508,3 @@ void boot_firmware(void) {
     __asm("LDR R0,=0x10001\n\t"
           "BX R0\n\t");
 }
-<<<<<<< HEAD
-
-void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
-    for (uint8_t* cursor = start; cursor < (start + len); cursor += 1) {
-        uint8_t data = *((uint8_t*)cursor);
-        uint8_t right_nibble = data & 0xF;
-        uint8_t left_nibble = (data >> 4) & 0xF;
-        char byte_str[3];
-        if (right_nibble > 9) {
-            right_nibble += 0x37;
-        } else {
-            right_nibble += 0x30;
-        }
-        byte_str[1] = right_nibble;
-        if (left_nibble > 9) {
-            left_nibble += 0x37;
-        } else {
-            left_nibble += 0x30;
-        }
-        byte_str[0] = left_nibble;
-        byte_str[2] = '\0';
-
-        uart_write_str(uart, byte_str);
-        uart_write_str(uart, " ");
-    }
-}
-
-
-
-void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes)
-{
-    for (int i = 0; i < bytes; ++i) {
-        volatile uint8_t data = uart_read(uart, blocking , read);
-        memcpy(out + i, (uint8_t*)(&data), 1);
-    }
-}
-
-void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes)
-{
-    for (int i = 0; i < bytes; ++i) {
-        volatile uint8_t data = {0};
-        memcpy(&data, in + i, 1);
-
-        uart_write(uart, data);
-    }
-}
-=======
->>>>>>> cleanup and new header files
