@@ -99,8 +99,58 @@ def send_metadata(ser, metadata, debug=False):
 
     return True
 
-def send_firmware(ser, metadata, debug=False):
-    return 1
+"""def send_firmware(ser, firmware, debug=False):
+    response = None
+
+    print("FIRMWARE:")
+
+    # Prevent debug abuse
+    if version == 0 and not debug:
+        raise RuntimeError("Invalid version request, aborting.")
+
+    # Handshake with bootloader to send metadata
+    ser.write(CHUNK)
+    print("\tPacket sent!")
+    while ser.read(HEADER) != OK:
+        time.sleep()
+
+    print("\tPacket accepted by bootloader!")
+    print('\tSending firmware!')
+    
+    
+    # Send firmware in frames
+    for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
+        data = firmware[frame_start : frame_start + FRAME_SIZE]
+
+        # Get length of data
+        length = len(data)
+        frame_fmt = ">H{}s".format(length)
+
+        # Construct frame.
+        frame = struct.pack(frame_fmt, length, data)
+
+        send_frame(ser, frame, debug=debug)
+
+        if debug:
+            print(f"Wrote frame {idx} ({len(frame)} bytes)...")
+
+    print("Done (1).")
+    ser.write(DONE)
+
+    # Send a zero length payload to tell the bootlader to finish writing its page.
+    ser.write(struct.pack(">H", 0x0000))
+
+    resp = ser.read(1)  # Wait for an OK from the bootloader
+    if resp != OK:
+        raise RuntimeError(
+            "ERROR: Bootloader responded to zero length frame with {}".format(
+                repr(resp)
+            )
+        )
+
+    print("Done (2).")
+
+    return ser"""
 
 
 def send_frame(ser, frame, debug=False):
@@ -119,7 +169,7 @@ def send_frame(ser, frame, debug=False):
 
     time.sleep(0.1)
 
-    if resp != RESP_OK:
+    if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
     if debug:
@@ -171,40 +221,7 @@ def update(ser, infile, debug):
     
     
     print("\tSending firmware!")
-    send_firmware(ser, metadata, debug=debug)
-    # Send firmware in frames
-    for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
-        data = firmware[frame_start : frame_start + FRAME_SIZE]
-
-        # Get length of data
-        length = len(data)
-        frame_fmt = ">H{}s".format(length)
-
-        # Construct frame.
-        frame = struct.pack(frame_fmt, length, data)
-
-        send_frame(ser, frame, debug=debug)
-
-        if debug:
-            print(f"Wrote frame {idx} ({len(frame)} bytes)...")
-
-    print("Done (1).")
-    ser.write(DONE)
-
-    # Send a zero length payload to tell the bootlader to finish writing its page.
-    ser.write(struct.pack(">H", 0x0000))
-
-    resp = ser.read(1)  # Wait for an OK from the bootloader
-    if resp != RESP_OK:
-        raise RuntimeError(
-            "ERROR: Bootloader responded to zero length frame with {}".format(
-                repr(resp)
-            )
-        )
-
-    print("Done (2).")
-
-    return ser
+    # send_firmware(ser, firmware, debug=debug)
     
 
 
