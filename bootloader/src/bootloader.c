@@ -198,10 +198,13 @@ bool update_firmware()
         for (int i = 0; i < frame_length; ++i) {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
+            uart_write(UART1, OK); // Ack
         }
+        
 
         /////////////// If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0) {
+            uart_write_str(UART1, "new flash");
             if (frame_length == 0) {
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
@@ -235,12 +238,11 @@ bool update_firmware()
             // If at end of firmware, go to main
             if (frame_length == 0) {
                 uart_write(UART1, OK);
+                uart_write_str(UART2, "end of the firm");
                 break;
             }
         } 
         /////////////////
-        
-        uart_write(UART1, OK); // Ack
         
        
         
