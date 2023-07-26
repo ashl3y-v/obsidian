@@ -128,7 +128,7 @@ def send_firmware(ser, firmware, debug=False):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
 
         # Get length of data
-        length = p16(len(data))
+        length = len(data)
 
         # Construct frame.
         frame = struct.pack(f'H{len(data)}s', length, data)
