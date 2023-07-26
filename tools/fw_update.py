@@ -29,6 +29,7 @@ from util import UART0_PATH, UART1_PATH, UART2_PATH, print_hex, DomainSocketSeri
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
 from Crypto.Signature import DSS
+from pwn import *
 
 
 # size of communication frame
@@ -76,6 +77,8 @@ def send_metadata(ser, metadata, debug=False):
 
     print("\tSending metadata!")
     print("\tAwaiting response...")
+    
+    sleep(0.2)
 
     b_version = bytes([])
     while len(b_version) != 2:
@@ -83,6 +86,8 @@ def send_metadata(ser, metadata, debug=False):
 
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
+    
+    sleep(0.2)
 
     b_size = bytes([])
     while len(b_size) != 2:
@@ -90,6 +95,8 @@ def send_metadata(ser, metadata, debug=False):
 
     b_size = int(struct.unpack("<H", b_size)[0])
     print(f"\tVersion size echoed by bootloader: {b_size}")
+    
+    sleep(0.2)
 
     b_mlength = bytes([])
     while len(b_mlength) != 2:
@@ -121,11 +128,10 @@ def send_firmware(ser, firmware, debug=False):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
 
         # Get length of data
-        length = len(data)
-        frame_fmt = ">H{}s".format(length)
+        length = p16(len(data))
 
         # Construct frame.
-        frame = struct.pack(frame_fmt, length, data)
+        frame = struct.pack(f'H{len(data)}s', length, data)
 
         send_frame(ser, frame, debug=debug)
 
@@ -157,15 +163,12 @@ def send_frame(ser, frame, debug=False):
     print_hex(frame)
 
     # Wait for an OK from the bootloader
-    time.sleep(0.1)
-
+    time.sleep(0.2)
     resp = ser.read(2)
-
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
-
     if debug:
         print("Resp: {}".format(ord(resp)))
 

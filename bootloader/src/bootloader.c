@@ -140,30 +140,30 @@ bool update_firmware()
     uart_write(UART1, OK);
 
     // Metadata stuff 
-    metadata data = {};
-    uart_read_wrp(UART1, BLOCKING, &read, &(data.version), sizeof(uint16_t));
+    metadata mdata = {};
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
 
     char buffer[5];
-    itoa(data.version, buffer, 10);
+    itoa(mdata.version, buffer, 10);
     uart_write_str(UART2, "Firmware version received: ");
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    uart_read_wrp(UART1, BLOCKING, &read, &(data.size), sizeof(uint16_t));
-    itoa(data.size, buffer, 10);
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.size), sizeof(uint16_t));
+    itoa(mdata.size, buffer, 10);
     uart_write_str(UART2, "Firmware size received: ");
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    uart_read_wrp(UART1, BLOCKING, &read, &(data.message_size), sizeof(uint16_t));
-    itoa(data.message_size, buffer, 10);
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.message_size), sizeof(uint16_t));
+    itoa(mdata.message_size, buffer, 10);
     uart_write_str(UART2, "Release message size received: ");
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    uart_write_wrp(UART1, &(data.version), sizeof(uint16_t));
-    uart_write_wrp(UART1, &(data.size), sizeof(uint16_t));
-    uart_write_wrp(UART1, &(data.message_size), sizeof(uint16_t));
+    uart_write_wrp(UART1, &(mdata.version), sizeof(uint16_t));
+    uart_write_wrp(UART1, &(mdata.size), sizeof(uint16_t));
+    uart_write_wrp(UART1, &(mdata.message_size), sizeof(uint16_t));
 
 
 
@@ -179,7 +179,69 @@ bool update_firmware()
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
 
+    // whhhhoooooo here we go
 
+    int frame_length = 0;
+    
+    uint32_t rcv = 0;
+    uint32_t data_index = 0;
+    uint32_t page_addr = FW_BASE;
+
+    while (1){
+        // Get the frame length
+        rcv = uart_read(UART1, BLOCKING, &read);
+        frame_length = (int)rcv << 8;
+        rcv = uart_read(UART1, BLOCKING, &read);
+        frame_length += (int)rcv;
+
+        // Get the frame bytes
+        for (int i = 0; i < frame_length; ++i) {
+            data[data_index] = uart_read(UART1, BLOCKING, &read);
+            data_index += 1;
+        }
+
+        // If we filed our page buffer, program it
+        if (data_index == FLASH_PAGESIZE || frame_length == 0) {
+            if (frame_length == 0) {
+                uart_write_str(UART2, "Got zero length frame.\n");
+            }
+
+            // Try to write flash and check for error
+            if (program_flash(page_addr, data, data_index)) {
+                uart_write(UART1, ERROR); // Reject the firmware
+                SysCtlReset();            // Reset device
+                return;
+            }
+
+            // Verify flash program
+            if (memcmp(data, (void*)page_addr, data_index) != 0) {
+                uart_write_str(UART2, "Flash check failed.\n");
+                uart_write(UART1, ERROR); // Reject the firmware
+                SysCtlReset();            // Reset device
+                return;
+            }
+            // Write debugging messages to UART2.
+            uart_write_str(UART2, "Page successfully programmed\nAddress: ");
+            uart_write_hex(UART2, page_addr);
+            uart_write_str(UART2, "\nBytes: ");
+            uart_write_hex(UART2, data_index);
+            nl(UART2);
+
+
+            // Update to next page
+            page_addr += FLASH_PAGESIZE;
+            data_index = 0;
+
+            // If at end of firmware, go to main
+            if (frame_length == 0) {
+                uart_write(UART1, OK);
+                break;
+            }
+        } 
+
+        uart_write(UART1, OK); // Acknowledge the frame.
+    }
+        
 }
 
 
@@ -399,6 +461,7 @@ void load_firmware(void) {
         uart_write(UART1, OK); // Acknowledge the frame.
     }                          // while(1)
 }
+*/
 
 long program_flash(uint32_t page_addr, unsigned char* data,
                    unsigned int data_len) {
@@ -477,7 +540,7 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
     }
 }
 
-*/
+
 
 void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes)
 {
