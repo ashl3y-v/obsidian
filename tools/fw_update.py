@@ -138,7 +138,7 @@ def send_firmware(ser, firmware, debug=False):
         print(f"Wrote frame {idx} ({len(frame)} bytes)...")
         sleep(0.2)
 
-    print("Done (1).")
+    
     ser.write(DONE)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
@@ -152,7 +152,7 @@ def send_firmware(ser, firmware, debug=False):
             )
         )
 
-    print("Done (2).")
+    print("Done .")
 
     return ser
 
@@ -165,11 +165,11 @@ def send_frame(ser, frame, debug=False):
 
     # Wait for an OK from the bootloader
     time.sleep(0.4)
-    print("just before the ok")
-    resp = ser.read(2)
+   
+    resp = ser.read(1)
     
     time.sleep(0.2)
-    print("just after the ok")
+  
 
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
