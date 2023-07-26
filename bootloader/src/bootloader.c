@@ -48,8 +48,8 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 
 #define READ_8(UART) uart_read(UART, BLOCKING, &read) 
 
-
-
+// Firmware flash thing
+unsigned char data[FLASH_PAGESIZE];
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -179,12 +179,12 @@ bool update_firmware()
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
 
+
 }
+
+
+
 /*
-// Firmware Buffer
-unsigned char data[FLASH_PAGESIZE];
-
-
 int main(void) {
     // A 'reset' on UART0 will re-start this code at the top of main, won't
     // clear flash, but will clean ram.

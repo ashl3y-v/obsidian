@@ -81,21 +81,21 @@ def send_metadata(ser, metadata, debug=False):
     while len(b_version) != 2:
         b_version = ser.read(2)
 
-    b_version = struct.unpack("<H", b_version)
+    b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
 
     b_size = bytes([])
     while len(b_size) != 2:
         b_size = ser.read(2)
 
-    b_size = struct.unpack("<H", b_size)
+    b_size = int(struct.unpack("<H", b_size)[0])
     print(f"\tVersion size echoed by bootloader: {b_size}")
 
     b_mlength = bytes([])
     while len(b_mlength) != 2:
         b_mlength = ser.read(2)
 
-    b_mlength = struct.unpack("<H", b_mlength)
+    b_mlength = int(struct.unpack("<H", b_mlength)[0])
     print(f"\tMessage length echoed by bootloader: {b_mlength}")
 
     return True
@@ -129,8 +129,7 @@ def send_firmware(ser, firmware, debug=False):
 
         send_frame(ser, frame, debug=debug)
 
-        if debug:
-            print(f"Wrote frame {idx} ({len(frame)} bytes)...")
+        print(f"Wrote frame {idx} ({len(frame)} bytes)...")
 
     print("Done (1).")
     ser.write(DONE)
@@ -152,15 +151,12 @@ def send_firmware(ser, firmware, debug=False):
 
 
 def send_frame(ser, frame, debug=False):
-    # Write/optionally print the frame
-    ser.write(CHUNK)
     ser.write(frame)
 
-    if debug:
-        print_hex(frame)
+    #if debug:
+    print_hex(frame)
 
     # Wait for an OK from the bootloader
-    # insecure example does not have first sleep, needed?
     time.sleep(0.1)
 
     resp = ser.read(2)
