@@ -73,8 +73,8 @@ def send_metadata(ser, metadata, debug=False):
     print("\tPacket accepted by bootloader!")
     ser.write(metadata)
     print('\tSending metadata!')
-    
     print("\tAwaiting response...")
+    
     
     b_version = bytes([])
     while len(b_version) != 2:

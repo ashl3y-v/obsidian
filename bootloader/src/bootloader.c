@@ -65,6 +65,9 @@ void uart_write_formatted_str(uint8_t uart, const char* fmt, ...);
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
 bool update_firmware();
 
+void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes);
+void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes);
+
 // Firmware Buffer
 unsigned char data[FLASH_PAGESIZE];
 
@@ -138,41 +141,26 @@ bool update_firmware()
 
 
     // Metadata stuff 
-    uint8_t dat1;
-    uint8_t dat2;
-    dat1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    dat2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    uart_write(UART1, dat1);
-    uart_write(UART1, dat2);
+    metadata data = {};
+    
+    uart_read_wrp(UART1, BLOCKING, &read, &(data.version), sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, &(data.size), sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, &(data.message_size), sizeof(uint16_t));
 
-    uint8_t siz1;
-    uint8_t siz2;
-    siz1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    siz2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    uart_write(UART1, siz1);
-    uart_write(UART1, siz2);
+    uart_write_wrp(UART1, &(data.version), sizeof(uint16_t));
+    uart_write_wrp(UART1, &(data.size), sizeof(uint16_t));
+    uart_write_wrp(UART1, &(data.message_size), sizeof(uint16_t));
 
-    uint8_t len1;
-    uint8_t len2;
-    len1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    len2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
-    uart_write(UART1, len1);
-    uart_write(UART1, len2);
-
-    // Wait for firmware to be sent
-    int read2;
     while (true)
     {
-        uint16_t request2 = uart_read(UART1, BLOCKING, &read2);
-        if (request2 == CHUNK)
+        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        if (request == CHUNK)
             break;
     }
     
     // Acknowledge that we are about to receive firmware
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
-
-
 
 }
 /*
@@ -473,3 +461,21 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
 }
 
 */
+
+void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes)
+{
+    for (int i = 0; i < bytes; ++i) {
+        volatile uint8_t data = uart_read(uart, blocking , read);
+        memcpy(out + i, (uint8_t*)(&data), 1);
+    }
+}
+
+void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes)
+{
+    for (int i = 0; i < bytes; ++i) {
+        volatile uint8_t data = {0};
+        memcpy(&data, in + i, 1);
+
+        uart_write(uart, data);
+    }
+}
