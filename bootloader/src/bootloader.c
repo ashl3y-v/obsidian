@@ -132,7 +132,7 @@ bool update_firmware()
             break;
     }
     
-    // buggy must fix
+    // buggy msust fix
     // Acknowledge that we are about to receive metadata
     uart_write_str(UART2, "META packet received on bootloader.\n");
     uart_write(UART1, OK);
