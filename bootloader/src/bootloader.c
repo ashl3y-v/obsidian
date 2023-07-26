@@ -137,13 +137,26 @@ bool update_firmware()
     uart_write_str(UART2, "META packet received on bootloader.\n");
     uart_write(UART1, OK);
 
-    metadata data = {0};
+    uint8_t dat1;
+    uint8_t dat2;
+    dat1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    dat2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    uart_write(UART1, dat1);
+    uart_write(UART1, dat2);
 
-    data.version = (uint16_t)uart_read(UART1, BLOCKING, &read);
-    data.version |= (uint16_t)uart_read(UART1, BLOCKING, &read) << 8;
+    uint8_t siz1;
+    uint8_t siz2;
+    siz1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    siz2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    uart_write(UART1, siz1);
+    uart_write(UART1, siz2);
 
-    uint16_t tx = (uint16_t)555;
-    uart_write(UART1, tx);
+    uint8_t len1;
+    uint8_t len2;
+    len1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    len2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
+    uart_write(UART1, len1);
+    uart_write(UART1, len2);
 }
 /*
 // Firmware Buffer
