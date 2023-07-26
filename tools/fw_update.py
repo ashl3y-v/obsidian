@@ -58,7 +58,7 @@ def send_metadata(ser, metadata, debug=False):
 
     print("METADATA:")
     # Parse version information
-    version, size = struct.unpack("<HH", metadata)
+    version, size = struct.unpack("<HH", metadata[0:4])
     print(f"\tVersion: {version}\n\tSize: {size} bytes\n")
 
     # Prevent debug abuse
