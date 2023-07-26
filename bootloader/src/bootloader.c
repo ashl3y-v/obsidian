@@ -165,6 +165,9 @@ bool update_firmware()
     uart_write_wrp(UART1, &(data.size), sizeof(uint16_t));
     uart_write_wrp(UART1, &(data.message_size), sizeof(uint16_t));
 
+
+
+    // Wait for firmware to be sent
     while (true)
     {
         uint16_t request = uart_read(UART1, BLOCKING, &read);

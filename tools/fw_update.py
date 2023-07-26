@@ -106,12 +106,9 @@ def send_firmware(ser, firmware, debug=False):
 
     print("FIRMWARE:")
 
-    # Prevent debug abuse
-    if version == 0 and not debug:
-        raise RuntimeError("Invalid version request, aborting.")
-
-    # Handshake with bootloader to send metadata
+    # Handshake with bootloader to send firmware
     ser.write(CHUNK)
+    
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
         time.sleep()
@@ -220,7 +217,7 @@ def update(ser, infile, debug):
     print("\tSending metadata!")
     send_metadata(ser, metadata, debug=debug)
 
-    print("\tSending firmware!")
+    
     send_firmware(ser, firmware, debug=debug)
 
 
