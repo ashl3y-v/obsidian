@@ -160,10 +160,10 @@ bool update_firmware()
     uart_write(UART1, len2);
 
     // Wait for firmware to be sent
-    int read;
+    int read2;
     while (true)
     {
-        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        uint16_t request = uart_read(UART1, BLOCKING, &read2);
         if (request == CHUNK)
             break;
     }
@@ -172,7 +172,7 @@ bool update_firmware()
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
 
-    
+
 
 }
 /*
