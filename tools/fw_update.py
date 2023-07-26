@@ -99,7 +99,7 @@ def send_metadata(ser, metadata, debug=False):
 
     return True
 
-"""def send_firmware(ser, firmware, debug=False):
+def send_firmware(ser, firmware, debug=False):
     response = None
 
     print("FIRMWARE:")
@@ -150,7 +150,7 @@ def send_metadata(ser, metadata, debug=False):
 
     print("Done (2).")
 
-    return ser"""
+    return ser
 
 
 def send_frame(ser, frame, debug=False):
@@ -165,7 +165,7 @@ def send_frame(ser, frame, debug=False):
     # insecure example does not have first sleep, needed?
     time.sleep(0.1)
 
-    resp = ser.read()
+    resp = ser.read(2)
 
     time.sleep(0.1)
 
@@ -221,7 +221,7 @@ def update(ser, infile, debug):
     
     
     print("\tSending firmware!")
-    # send_firmware(ser, firmware, debug=debug)
+    send_firmware(ser, firmware, debug=debug)
     
 
 
