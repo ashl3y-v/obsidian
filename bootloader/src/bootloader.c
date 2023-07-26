@@ -91,7 +91,7 @@ void init_interfaces()
     uart_write_str(UART2, "Obsidian Update Interface\n");
     uart_write_str(UART2, 
                         "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device");
+    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device\n");
     uart_write_str(UART2, " ");
 }
 
@@ -139,13 +139,27 @@ bool update_firmware()
     uart_write_str(UART2, "META packet received on bootloader.\n");
     uart_write(UART1, OK);
 
-
     // Metadata stuff 
     metadata data = {};
-    
     uart_read_wrp(UART1, BLOCKING, &read, &(data.version), sizeof(uint16_t));
+
+    char buffer[5];
+    itoa(data.version, buffer, 10);
+    uart_write_str(UART2, "Firmware version received: ");
+    uart_write_str(UART2, buffer);
+    nl(UART2);
+
     uart_read_wrp(UART1, BLOCKING, &read, &(data.size), sizeof(uint16_t));
+    itoa(data.size, buffer, 10);
+    uart_write_str(UART2, "Firmware size received: ");
+    uart_write_str(UART2, buffer);
+    nl(UART2);
+
     uart_read_wrp(UART1, BLOCKING, &read, &(data.message_size), sizeof(uint16_t));
+    itoa(data.message_size, buffer, 10);
+    uart_write_str(UART2, "Release message size received: ");
+    uart_write_str(UART2, buffer);
+    nl(UART2);
 
     uart_write_wrp(UART1, &(data.version), sizeof(uint16_t));
     uart_write_wrp(UART1, &(data.size), sizeof(uint16_t));
