@@ -218,7 +218,7 @@ bool update_firmware()
 
             // Verify flash program
             if (memcmp(data, (void*)page_addr, data_index) != 0) {
-                uart_write_str(UART2, "Flash check failed.\n");
+                uart_write_str(UART2, "Flash check failed, aborting.\n");
                 uart_write(UART1, ERROR); 
                 SysCtlReset();            // goodbye device kek
                 return;

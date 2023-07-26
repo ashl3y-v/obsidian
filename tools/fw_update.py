@@ -135,7 +135,7 @@ def send_firmware(ser, firmware, debug=False):
 
         send_frame(ser, frame, debug=debug)
 
-        print(f"Wrote frame {idx} ({len(frame)} bytes)...")
+        print(f"Wrote frame {idx} ({len(frame)} bytes).")
         sleep(0.2)
 
     
@@ -152,7 +152,8 @@ def send_firmware(ser, firmware, debug=False):
             )
         )
 
-    print("Done .")
+    print("Done writing firmware.")
+    print("Closing update tool.")
 
     return ser
 
@@ -160,8 +161,8 @@ def send_firmware(ser, firmware, debug=False):
 def send_frame(ser, frame, debug=False):
     ser.write(frame)
 
-    #if debug:
-    print_hex(frame)
+    if debug:
+        print_hex(frame)
 
     # Wait for an OK from the bootloader
     time.sleep(0.4)
