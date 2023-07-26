@@ -17,7 +17,7 @@
             "dependsOn": [
                 "Emulate",
                 "UART0",
-                "UART1",
+                
                 "UART2",
                 "Update"
             ],
@@ -70,15 +70,7 @@
             },
             "problemMatcher": []
         },
-        {
-            "label": "UART1",
-            "type": "shell",
-            "command": "python ./tools/uartone.py",
-            "presentation": {
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        },
+        
         {
             "label": "UART2",
             "type": "shell",
