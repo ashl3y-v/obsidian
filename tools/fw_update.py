@@ -55,9 +55,10 @@ CRYPTO_DIRECTORY = (
 def send_metadata(ser, metadata, debug=False):
     response = None
 
+    print("METADATA:")
     # Parse version information
     version, size = struct.unpack_from("<HH", metadata)
-    print(f"Version: {version}\nSize: {size} bytes\n")
+    print(f"\tVersion: {version}\n\tSize: {size} bytes\n")
 
     # Prevent debug abuse
     if version == 0 and not debug:
@@ -65,15 +66,22 @@ def send_metadata(ser, metadata, debug=False):
 
     # Handshake with bootloader to send metadata
     ser.write(META)
+    print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        pass
+        time.sleep()
 
+    print("\tPacket received by bootloader!")
     ser.write(metadata)
-    print(ser.readline().decode('utf-8'))
-    print(u16(ser.read(2)))
-    print(u16(ser.read(2)))
-    print(u16(ser.read(2)))
+    print('\tSending metadata!')
+    
+    print("\tAwaiting response...")
+    b_version = bytes([])
+    while len(b_version) != 2:
+        b_version = ser.read(2)
+        print(b_version)
 
+    b_version = u16(b_version)
+    print(f"\tVersion echoed by firmware: {b_version}")
     return True
 
 def send_frame(ser, frame, debug=False):
@@ -109,13 +117,13 @@ def update(ser, infile, debug):
     print("Connected!")
     time.sleep(3)
 
+    print("UPDATE:")
     ser.write(UPDATE)
-    print("Update request sent!")
-
+    print("\tPacket sent!")
     while response != OK:
         response = ser.read(2)
 
-    print("Acknowledgement from bootloader received!")
+    print("\tPacket accepted by bootloader!\n")
 
     # Parse firmware blob
     signature = firmware_blob[0:64]
@@ -127,17 +135,19 @@ def update(ser, infile, debug):
     with open(CRYPTO_DIRECTORY / "ecc_public.raw", "rb") as fp:
         key = ECC.import_key(fp.read(), curve_name="secp256r1")
 
+    print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
     verifier = DSS.new(key, "fips-186-3")
     try:
         verifier.verify(hasher, signature)
-        print("Hash verified on the client.")
+        print("\tHash verified on the client.")
     except ValueError:
         raise RuntimeError("Invalid signature, aborting.")
 
     ## Proceed to sending data.
 
     # Send metadata
+    print("\tSending metadata!")
     send_metadata(ser, metadata, debug=debug)
 
     """

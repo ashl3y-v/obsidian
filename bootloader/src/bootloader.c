@@ -123,7 +123,6 @@ int main(void)
 
 bool update_firmware()
 {
-    uint32_t rcv;
     // Wait for metadata to be sent
     int read;
     while (true)
@@ -132,49 +131,19 @@ bool update_firmware()
         if (request == META)
             break;
     }
-
-
+    
     // buggy must fix
     // Acknowledge that we are about to receive metadata
-    uart_write(UART1, OK);
     uart_write_str(UART2, "META packet received on bootloader.\n");
-    
+    uart_write(UART1, OK);
+
     metadata data = {0};
 
-    data.version = uart_read(UART1, BLOCKING, &read);
-    data.version |= (uint16_t)uart_read(UART1, BLOCKING, &read) << 4;
-    
-    data.size = (uint16_t) uart_read(UART1, BLOCKING, &read);
-    data.size |= (uint16_t)uart_read(UART1, BLOCKING, &read) << 8;
+    data.version = (uint16_t)uart_read(UART1, BLOCKING, &read);
+    data.version |= (uint16_t)uart_read(UART1, BLOCKING, &read) << 8;
 
-    data.message_size = (uint16_t)uart_read(UART1, BLOCKING, &read);
-    data.message_size |= (uint16_t)uart_read(UART1, BLOCKING, &read) << 8;
-
-    uart_write_str(UART1, "whats good\n");
-    uart_write(UART1, data.version);
-    uart_write(UART1, data.size);
-    uart_write(UART1, data.message_size);
-
-    /*
-    uart_write_str(UART2, "Received version: ");
-
-    char buffer[10];
-    itoa(data.version, buffer, 10);
-
-    uart_write_str(UART2, buffer);
-    
-    nl(UART2);
-
-    uart_write_str(UART2, "Received firmware size: ");
-    uart_write_str(UART2, buffer);
-    nl(UART2);
-
-    uart_write_str(UART2, "Received message size: ");
-    itoa(data.message_size, buffer, 10);
-    uart_write_str(UART2, buffer
-    );
-    nl(UART2);
-    */
+    uint16_t tx = (uint16_t)555;
+    uart_write(UART1, tx);
 }
 /*
 // Firmware Buffer
