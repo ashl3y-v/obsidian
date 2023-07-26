@@ -132,11 +132,12 @@ bool update_firmware()
             break;
     }
     
-    // buggy msust fix
     // Acknowledge that we are about to receive metadata
     uart_write_str(UART2, "META packet received on bootloader.\n");
     uart_write(UART1, OK);
 
+
+    // Metadata stuff 
     uint8_t dat1;
     uint8_t dat2;
     dat1 = (uint8_t)uart_read(UART1, BLOCKING, &read);
@@ -157,6 +158,22 @@ bool update_firmware()
     len2 = (uint8_t)uart_read(UART1, BLOCKING, &read);
     uart_write(UART1, len1);
     uart_write(UART1, len2);
+
+    // Wait for firmware to be sent
+    int read;
+    while (true)
+    {
+        uint16_t request = uart_read(UART1, BLOCKING, &read);
+        if (request == CHUNK)
+            break;
+    }
+    
+    // Acknowledge that we are about to receive firmware
+    uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
+    uart_write(UART1, OK);
+
+    
+
 }
 /*
 // Firmware Buffer

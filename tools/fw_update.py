@@ -81,25 +81,27 @@ def send_metadata(ser, metadata, debug=False):
         b_version = ser.read(2)
 
     b_version = u16(b_version)
-    print(f"\tVersion echoed by firmware: {b_version}")
+    print(f"\tVersion echoed by bootloader: {b_version}")
     
     b_size = bytes([])
     while len(b_size) != 2:
         b_size = ser.read(2)
     
     b_size = u16(b_size)
-    print(f"\tVersion size echoed by firmware: {b_size}")
+    print(f"\tVersion size echoed by bootloader: {b_size}")
     
     b_mlength = bytes([])
     while len(b_mlength) != 2:
         b_mlength = ser.read(2)
     
     b_mlength = u16(b_mlength)
-    print(f"\tMessage length echoed by firmware: {b_mlength}") 
-    
-    
-    
+    print(f"\tMessage length echoed by bootloader: {b_mlength}") 
+
     return True
+
+def send_firmware(ser, metadata, debug=False):
+    return 1
+
 
 def send_frame(ser, frame, debug=False):
     # Write/optionally print the frame
@@ -166,8 +168,10 @@ def update(ser, infile, debug):
     # Send metadata
     print("\tSending metadata!")
     send_metadata(ser, metadata, debug=debug)
-
-    """
+    
+    
+    print("\tSending firmware!")
+    send_firmware(ser, metadata, debug=debug)
     # Send firmware in frames
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
@@ -201,7 +205,7 @@ def update(ser, infile, debug):
     print("Done (2).")
 
     return ser
-    """
+    
 
 
 if __name__ == "__main__":
