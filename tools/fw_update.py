@@ -174,8 +174,8 @@ def send_frame(ser, frame, debug=False):
 
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
-    
-    print("Resp: {}".format(ord(resp)))
+    if debug:
+        print("Resp: {}".format(ord(resp)))
 
 
 def update(ser, infile, debug):
