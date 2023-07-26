@@ -130,12 +130,13 @@ def send_firmware(ser, firmware, debug=False):
         # Get length of data
         length = len(data)
 
-        # Construct frame.
+        # Construct frame
         frame = struct.pack(f'H{len(data)}s', length, data)
 
         send_frame(ser, frame, debug=debug)
 
         print(f"Wrote frame {idx} ({len(frame)} bytes)...")
+        sleep(0.2)
 
     print("Done (1).")
     ser.write(DONE)
@@ -163,14 +164,17 @@ def send_frame(ser, frame, debug=False):
     print_hex(frame)
 
     # Wait for an OK from the bootloader
-    time.sleep(0.2)
+    time.sleep(0.4)
+    print("just before the ok")
     resp = ser.read(2)
+    
     time.sleep(0.2)
+    print("just after the ok")
 
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
-    if debug:
-        print("Resp: {}".format(ord(resp)))
+    
+    print("Resp: {}".format(ord(resp)))
 
 
 def update(ser, infile, debug):

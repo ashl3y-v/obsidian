@@ -200,7 +200,7 @@ bool update_firmware()
             data_index += 1;
         }
 
-        // If we filed our page buffer, program it
+        /////////////// If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0) {
             if (frame_length == 0) {
                 uart_write_str(UART2, "Got zero length frame.\n");
@@ -208,19 +208,19 @@ bool update_firmware()
 
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)) {
-                uart_write(UART1, ERROR); // Reject the firmware
-                SysCtlReset();            // Reset device
+                uart_write(UART1, ERROR); 
+                SysCtlReset();            // goodbye device kek
                 return;
             }
 
             // Verify flash program
             if (memcmp(data, (void*)page_addr, data_index) != 0) {
                 uart_write_str(UART2, "Flash check failed.\n");
-                uart_write(UART1, ERROR); // Reject the firmware
-                SysCtlReset();            // Reset device
+                uart_write(UART1, ERROR); 
+                SysCtlReset();            // goodbye device kek
                 return;
             }
-            // Write debugging messages to UART2.
+            
             uart_write_str(UART2, "Page successfully programmed\nAddress: ");
             uart_write_hex(UART2, page_addr);
             uart_write_str(UART2, "\nBytes: ");
@@ -238,8 +238,13 @@ bool update_firmware()
                 break;
             }
         } 
-
-        uart_write(UART1, OK); // Acknowledge the frame.
+        /////////////////
+        
+        uart_write(UART1, OK); // Ack
+        
+       
+        
+        
     }
         
 }
