@@ -89,6 +89,7 @@ void init_interfaces()
     uart_write_str(UART2, 
                         "Send \"U\" to update, and \"B\" to run the firmware.\n");
     uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device");
+    uart_write_str(UART2, " ");
 }
 
 
