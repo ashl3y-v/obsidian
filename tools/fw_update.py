@@ -70,18 +70,35 @@ def send_metadata(ser, metadata, debug=False):
     while ser.read(HEADER) != OK:
         time.sleep()
 
-    print("\tPacket received by bootloader!")
+    print("\tPacket accepted by bootloader!")
     ser.write(metadata)
     print('\tSending metadata!')
     
     print("\tAwaiting response...")
+    
     b_version = bytes([])
     while len(b_version) != 2:
         b_version = ser.read(2)
-        print(b_version)
 
     b_version = u16(b_version)
     print(f"\tVersion echoed by firmware: {b_version}")
+    
+    b_size = bytes([])
+    while len(b_size) != 2:
+        b_size = ser.read(2)
+    
+    b_size = u16(b_size)
+    print(f"\tVersion size echoed by firmware: {b_size}")
+    
+    b_mlength = bytes([])
+    while len(b_mlength) != 2:
+        b_mlength = ser.read(2)
+    
+    b_mlength = u16(b_mlength)
+    print(f"\tMessage length echoed by firmware: {b_mlength}") 
+    
+    
+    
     return True
 
 def send_frame(ser, frame, debug=False):
