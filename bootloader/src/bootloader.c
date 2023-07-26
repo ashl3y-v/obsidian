@@ -46,11 +46,14 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define DONE        ((uint16_t)('D'))
 #define FRAME_SIZE  ((uint16_t)(256))
 
+<<<<<<< HEAD
 #define READ_8(UART) uart_read(UART, BLOCKING, &read) 
 
 // Firmware flash thing
 unsigned char data[FLASH_PAGESIZE];
 
+=======
+>>>>>>> cleanup and new header files
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
 extern int _binary_firmware_bin_start;
@@ -61,22 +64,15 @@ uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
 
-void uart_write_formatted_str(uint8_t uart, const char* fmt, ...);
-void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len);
-bool update_firmware();
+// Program functions
+void update_firmware();
+bool load_metadata();
 
-void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes);
-void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes);
-
-// Firmware Buffer
-unsigned char data[FLASH_PAGESIZE];
 
 // Setup the bootloader for communication
 void init_interfaces()
 {
-    // Initalize  UART channels 0-2
-
-    // Reset (INT 0)
+    // The interrupt handler listens to UART0 for RESET interrupts
     uart_init(UART0); 
     IntEnable(INT_UART0);
     IntMasterEnable();
@@ -124,9 +120,8 @@ int main(void)
     }
 }
 
-bool update_firmware()
+metadata load_metadata()
 {
-    // Wait for metadata to be sent
     int read;
     while (true)
     {
@@ -293,7 +288,7 @@ int main(void) {
     }
 }
 
-
+/*
 void load_initial_firmware(void) {
 
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
@@ -521,6 +516,7 @@ void boot_firmware(void) {
     __asm("LDR R0,=0x10001\n\t"
           "BX R0\n\t");
 }
+<<<<<<< HEAD
 
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
     for (uint8_t* cursor = start; cursor < (start + len); cursor += 1) {
@@ -566,3 +562,5 @@ void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes)
         uart_write(uart, data);
     }
 }
+=======
+>>>>>>> cleanup and new header files
