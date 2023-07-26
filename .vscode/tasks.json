@@ -17,7 +17,6 @@
             "dependsOn": [
                 "Emulate",
                 "UART0",
-                
                 "UART2",
                 "Update"
             ],
@@ -64,17 +63,16 @@
         {
             "label": "UART0",
             "type": "shell",
-            "command": "python ./tools/uartzero.py",
+            "command": "python ./tools/uart.py 0",
             "presentation": {
                 "panel": "dedicated"
             },
             "problemMatcher": []
         },
-        
         {
             "label": "UART2",
             "type": "shell",
-            "command": "python ./tools/uarttwo.py",
+            "command": "python ./tools/uart.py 2",
             "presentation": {
                 "panel": "dedicated"
             },
