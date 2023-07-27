@@ -138,22 +138,13 @@ def send_firmware(ser, firmware, debug=False):
         print(f"Wrote frame {idx} ({len(frame)} bytes).")
         sleep(0.2)
 
-    
-    ser.write(DONE)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
     ser.write(struct.pack(">H", 0x0000))
 
     resp = ser.read(1)  # Wait for an OK from the bootloader
     if resp != OK:
-        raise RuntimeError(
-            "ERROR: Bootloader responded to zero length frame with {}".format(
-                repr(resp)
-            )
-        )
-
-    print("Done writing firmware.")
-    print("Closing update tool.")
+        raise RuntimeError("ERROR: Bootloader responded to zero length frame with {}".format(repr(resp)))
 
     return ser
 
@@ -223,6 +214,14 @@ def update(ser, infile, debug):
 
     print("\tSending firmware!")
     send_firmware(ser, firmware, debug=debug)
+    
+    print("Done writing firmware.")
+    
+    while (1):
+        boot_q = str(input("Enter B to boot the firmware. ")).strip()
+        if boot_q == 'B':
+            break
+    ser.write(BOOT)
 
 
 if __name__ == "__main__":
