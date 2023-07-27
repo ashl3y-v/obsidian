@@ -17,7 +17,6 @@
 
 
 // Application Imports
-#include "uart.h"
 #include "utility.h"
 #include "structures.h"
 #include "../crypto/secrets.h"
@@ -61,6 +60,8 @@ uint8_t* fw_release_message_address;
 // Program functions
 void update_firmware();
 metadata load_metadata();
+
+unsigned char data[FLASH_PAGESIZE];
 
 // Setup the bootloader for communication
 void init_interfaces()
@@ -122,7 +123,7 @@ metadata load_metadata()
     uart_write(UART1, OK);
 
     // Metadata stuff 
-    metadata mdata = {};
+    metadata mdata = {0};
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
 
     char buffer[5];
@@ -160,6 +161,7 @@ void update_firmware()
     }
 
     // Wait for firmware to be sent
+    int read;
     while (true)
     {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
