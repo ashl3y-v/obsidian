@@ -205,9 +205,9 @@ def update(ser, infile, debug):
     print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
     hasherd = SHA256.new(metadata)
-    if debug:
-        print("Metadata-only SHA256 hash: ", hasherd.hexdigest())
-        print("Complete SHA256 hash: ", hasher.hexdigest())
+    #if debug:
+    print("Metadata-only SHA256 hash: ", hasherd.hexdigest())
+    print("Complete SHA256 hash: ", hasher.hexdigest())
     
     # Check for integrity compromise using ECC public key signature
     key = None
