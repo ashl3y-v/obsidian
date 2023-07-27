@@ -174,8 +174,9 @@ void update_firmware() {
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
     
-
+    // Iterate over size of version
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
+        // Get 2 bytes for frame length
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
         uart_write_str(UART2, "Packet received.\n");
 
@@ -188,7 +189,6 @@ void update_firmware() {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
         }
-        
         
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
@@ -223,15 +223,15 @@ void update_firmware() {
             data_index = 0;
             
         } 
+        // Send ack once packet written
         uart_write(UART1, OK);
 
+        // If it ran out
         if (frame_length == 0) {
             uart_write(UART1, OK);
             uart_write_str(UART2, "End of firmware reached.");
             break;
         }
-
-        
         
     }
     uart_write(UART1, OK);
