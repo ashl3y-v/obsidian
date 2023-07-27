@@ -210,10 +210,10 @@ def update(ser, infile, debug):
         raise RuntimeError("Invalid signature, aborting.")
 
     ## Proceed to sending data.
-
+    
     # Send metadata
     print("\tSending metadata!")
-    send_metadata(ser, metadata, debug=debug)
+    send_metadata(ser, signature + metadata, debug=debug)
 
     # Send firmware
     print("\tSending firmware!")
