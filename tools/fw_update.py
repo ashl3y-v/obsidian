@@ -53,7 +53,7 @@ def send_metadata(ser, metadata, debug=False):
 
     print("METADATA:")
     # Parse version information
-    version, size = struct.unpack("<HH", metadata[0:4])
+    version, size = struct.unpack("<HH", metadata[64:68])
     print(f"\tVersion: {version}\n\tSize: {size} bytes\n")
 
     # Prevent debug abuse
@@ -202,6 +202,10 @@ def update(ser, infile, debug):
 
     print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
+
+    hasherd = SHA256.new(metadata)
+    print("metadata only sha256 signature: ", hasherd.hexdigest())
+    print("entire file signature sha256: ", hasher.hexdigest())
     verifier = DSS.new(key, "fips-186-3")
     try:
         verifier.verify(hasher, signature)
@@ -210,10 +214,10 @@ def update(ser, infile, debug):
         raise RuntimeError("Invalid signature, aborting.")
 
     ## Proceed to sending data.
-
+    
     # Send metadata
     print("\tSending metadata!")
-    send_metadata(ser, metadata, debug=debug)
+    send_metadata(ser, signature + metadata, debug=debug)
 
     # Send firmware
     print("\tSending firmware!")

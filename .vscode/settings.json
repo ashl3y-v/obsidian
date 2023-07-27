@@ -4,6 +4,7 @@
         "stdint.h": "c",
         "secrets.h": "c",
         "uart.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "beaverssl.h": "c"
     }
 }
