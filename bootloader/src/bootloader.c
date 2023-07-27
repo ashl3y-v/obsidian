@@ -175,7 +175,12 @@ void update_firmware() {
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.message_size, sizeof(uint16_t));   
 
-   
+    uint8_t hash[32] = {};
+    br_sha256_out(&sha256, hash);
+
+    uart_write_str(UART2, "metadata sha256 signature: ");
+    uart_write_hex_bytes(UART2, hash, 32);
+    nl(UART2);
 
     // Wait for firmware to be sent
     int read;
@@ -200,11 +205,10 @@ void update_firmware() {
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
         uart_write_str(UART2, "Packet received.\n");
 
-        
         uart_read_wrp(UART1, BLOCKING, &read, data + data_index, frame_length);
         br_sha256_update(&sha256, data + data_index, frame_length);
         data_index += frame_length;
-     
+       
         // memcpy(firmware + data_index, &(data[data_index]), frame_length);
         
         // If we filed our page buffer, program it
@@ -254,12 +258,23 @@ void update_firmware() {
         
     }
 
-    uint8_t hash[32] = {};
     br_sha256_out(&sha256, hash);
 
-    uart_write_str(UART2, "sha256 signature: ");
+    uart_write_str(UART2, "metadata + firmware sha256 signature: ");
     uart_write_hex_bytes(UART2, hash, 32);
     nl(UART2);
+
+    if (br_ecdsa_i31_vrfy_raw(
+        &br_ec_p256_m31, 
+        hash, 
+        32,
+        &EC_PUBLIC, 
+        &mdata.signature,
+        SIGNATURE_SIZE)
+    )
+        uart_write_str(UART2, "the data is valid woohoo\n");
+    else
+        uart_write_str(UART2, "bruh nice try\n");
 
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
