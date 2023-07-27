@@ -121,7 +121,7 @@ def generate_secrets():
                 f"const uint8_t ECC_PUBLIC_KEY[ECC_KEY_LENGTH] = {arrayize(exported_public)};\n".encode()
             )
             file.write(
-                b"const br_ec_public_key EC_PUBLIC = (const br_ec_public_key){\n"
+                b"const br_ec_public_key EC_PUBLIC = (br_ec_public_key){\n"
             )
             file.write(b"\t.curve = BR_EC_secp256r1,\n")
             file.write(b"\t.q = (void*)(ECC_PUBLIC_KEY),\n")
