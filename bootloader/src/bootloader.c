@@ -15,11 +15,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-
 // Application Imports
-#include "utility.h"
-#include "structures.h"
 #include "../crypto/secrets.h"
+#include "structures.h"
+#include "utility.h"
 
 // Forward Declarations
 void load_initial_firmware(void);
@@ -37,14 +36,14 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define FLASH_WRITESIZE 4
 
 // Protocol Constants
-#define OK          ((uint16_t)('O'))
-#define ERROR       ((uint16_t)('E'))
-#define UPDATE      ((uint16_t)('U'))
-#define BOOT        ((uint16_t)('B'))
-#define META        ((uint16_t)('M'))
-#define CHUNK       ((uint16_t)('C'))
-#define DONE        ((uint16_t)('D'))
-#define FRAME_SIZE  ((uint16_t)(256))
+#define OK ((uint16_t)('O'))
+#define ERROR ((uint16_t)('E'))
+#define UPDATE ((uint16_t)('U'))
+#define BOOT ((uint16_t)('B'))
+#define META ((uint16_t)('M'))
+#define CHUNK ((uint16_t)('C'))
+#define DONE ((uint16_t)('D'))
+#define FRAME_SIZE ((uint16_t)(256))
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -56,7 +55,6 @@ uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
 
-
 // Program functions
 void update_firmware();
 metadata load_metadata();
@@ -64,65 +62,59 @@ metadata load_metadata();
 unsigned char data[FLASH_PAGESIZE];
 
 // Setup the bootloader for communication
-void init_interfaces()
-{
+void init_interfaces() {
     // The interrupt handler listens to UART0 for RESET interrupts
-    uart_init(UART0); 
+    uart_init(UART0);
     IntEnable(INT_UART0);
     IntMasterEnable();
 
     // Bootloader Interface
-    uart_init(UART1); 
+    uart_init(UART1);
 
     // Bootloader Output
-    uart_init(UART2); 
+    uart_init(UART2);
 
     load_initial_firmware();
     uart_write_str(UART2, "Obsidian Update Interface\n");
-    uart_write_str(UART2, 
-                        "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(UART2, "Writing 0x20 to UART0 (space) will reset the device\n");
+    uart_write_str(UART2,
+                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
+    uart_write_str(UART2,
+                   "Writing 0x20 to UART0 (space) will reset the device\n");
     uart_write_str(UART2, " ");
 }
 
-
-int main(void) 
-{
+int main(void) {
     init_interfaces();
 
     int read;
-    while (true)
-    {
+    while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
-        switch (request)
-        {
-            case UPDATE:
-                uart_write(UART1, OK);
-                uart_write_str(UART2, "Received a request to update firmware.\n");
-                update_firmware();
-                
-            case BOOT:
-                uart_write_str(UART2, "Received a request to boot firmware.\n");
-                
+        switch (request) {
+        case UPDATE:
+            uart_write(UART1, OK);
+            uart_write_str(UART2, "Received a request to update firmware.\n");
+            update_firmware();
+            break;
+        case BOOT:
+            uart_write_str(UART2, "Received a request to boot firmware.\n");
+            break;
         }
     }
 }
 
-metadata load_metadata()
-{
+metadata load_metadata() {
     int read;
-    while (true)
-    {
+    while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
         if (request == META)
             break;
     }
-    
+
     // Acknowledge that we are about to receive metadata
     uart_write_str(UART2, "META packet received on bootloader.\n");
     uart_write(UART1, OK);
 
-    // Metadata stuff 
+    // Metadata stuff
     metadata mdata = {0};
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
 
@@ -138,7 +130,8 @@ metadata load_metadata()
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.message_size), sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.message_size),
+                  sizeof(uint16_t));
     itoa(mdata.message_size, buffer, 10);
     uart_write_str(UART2, "Release message size received: ");
     uart_write_str(UART2, buffer);
@@ -151,40 +144,36 @@ metadata load_metadata()
     return mdata;
 }
 
-void update_firmware()
-{
+void update_firmware() {
     metadata mdata = load_metadata();
-    if (!mdata.size)
-    {
-        uart_write_str(UART2, "Something went wrong trying to load the metadata; restarting device\n");
+    if (!mdata.size) {
+        uart_write_str(UART2, "Something went wrong trying to load the "
+                              "metadata; restarting device\n");
         SysCtlReset();
     }
 
     // Wait for firmware to be sent
     int read;
-    while (true)
-    {
+    while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
         if (request == CHUNK)
             break;
     }
-    
+
     // Acknowledge that we are about to receive firmware
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
 
     // whhhhoooooo here we go
     uint16_t frame_length = 0;
+
     uint32_t rcv = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
 
+    while (1) {
 
-    int FRAME_SIZE;
-    int frame_start = idx;
-    
-
-    for (int idx = 0; idx < meta.size; idx += FRAME_SIZE) {
+        // Get the frame length
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
         uart_write_str(UART2, "One packet.\n");
 
@@ -193,14 +182,13 @@ void update_firmware()
         //uart_write_str(UART2, frame_length);
 
         // Get the frame bytes
-        for (int i = 0; i < frame_length; i++) {
+        for (int i = 0; i < frame_length - 1; i++) {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
         }
-        uart_write(UART1, OK);
-        
+
         // If we filed our page buffer, program it
-        if (data_index == FLASH_PAGESIZE || frame_length == 0) {
+        if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
             uart_write_str(UART1, "New flash page.");
             if (!frame_length) {
                 uart_write_str(UART2, "Got zero length frame.\n");
@@ -208,19 +196,19 @@ void update_firmware()
 
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)) {
-                uart_write(UART1, ERROR); 
-                SysCtlReset();            // goodbye device kek
+                uart_write(UART1, ERROR);
+                SysCtlReset(); // goodbye device kek
                 return;
             }
 
             // Verify flash program
             if (memcmp(data, (void*)page_addr, data_index) != 0) {
                 uart_write_str(UART2, "Flash check failed, aborting.\n");
-                uart_write(UART1, ERROR); 
-                SysCtlReset();            // goodbye device kek
+                uart_write(UART1, ERROR);
+                SysCtlReset(); // goodbye device kek
                 return;
             }
-            
+
             uart_write_str(UART2, "Page successfully programmed at address ");
             uart_write_hex(UART2, page_addr);
             uart_write_str(UART2, "\nBytes: ");
@@ -230,18 +218,16 @@ void update_firmware()
             // Update to next page
             page_addr += FLASH_PAGESIZE;
             data_index = 0;
-            
-        } 
-        
-        if (frame_length == 0) {
-            uart_write_str(UART2, "End of firmware reached.");
-            break;
-        }
-        
-    }
-    uart_write_str(UART2, "Finished writing firmware.\n");
 
-        
+            // If at end of firmware, go to main
+            if (frame_length == 0) {
+                uart_write(UART1, OK);
+                uart_write_str(UART2, "End of firmware reached.");
+                break;
+            }
+        }
+        //
+    }
 }
 
 /*
@@ -288,7 +274,7 @@ int main(void) {
 void load_initial_firmware(void) {
 
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
-       
+
         return;
     }
 
@@ -313,7 +299,6 @@ void load_initial_firmware(void) {
         program_flash(FW_BASE + (i * FLASH_PAGESIZE),
                       initial_data + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
     }
-
 
     uint16_t rem_fw_bytes = size % FLASH_PAGESIZE;
     if (rem_fw_bytes == 0) {
@@ -401,7 +386,7 @@ void load_firmware(void) {
 
     uart_write(UART1, OK); // Acknowledge the metadata.
 
-   
+
     while (1) {
 
         // Get two bytes for the length.
