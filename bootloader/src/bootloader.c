@@ -193,23 +193,6 @@ void update_firmware() {
     br_sha256_init(&sha256);
     uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
 
-    // initialize aes gcm context (broken)
-    // idk if these initializations are right
-    // context needs to have private key in it, how?
-    br_gcm_context ctx = {0};
-
-    const br_block_ctr_class* bctx = {0};
-
-    br_ghash gh = {0};
-
-    // hangs
-    br_gcm_init(&ctx, &bctx, gh);
-
-    int encrypt = 0;
-
-    // we need to run this on each block, possible?
-    // br_gcm_run(&ctx, encrypt, (void*)data, strlen(data));
-
     // Update our SHA256 hash with our current metadata
     br_sha256_update(&sha256, &mdata.version, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
@@ -241,6 +224,9 @@ void update_firmware() {
     uint16_t frame_length = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
+
+    // Set up decryption stuff
+    
 
     // Iterate over the size of the firmware
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
@@ -419,107 +405,6 @@ void load_initial_firmware(void) {
         }
     }
 }
-/*
-
-void load_firmware(void) {
-    int frame_length = 0;
-    int read = 0;
-    uint32_t rcv = 0;
-
-    uint32_t data_index = 0;
-    uint32_t page_addr = FW_BASE;
-    uint32_t version = 0;
-    uint32_t size = 0;
-
-    // Get version as 16 bytes
-    rcv = uart_read(UART1, BLOCKING, &read);
-    version = (uint32_t)rcv;
-    rcv = uart_read(UART1, BLOCKING, &read);
-    version |= (uint32_t)rcv << 8;
-
-    uart_write_str(UART2, "Received firmware version: ");
-    uart_write_hex(UART2, version);
-    nl(UART2);
-
-    // Get size as 16 bytes
-    rcv = uart_read(UART1, BLOCKING, &read);
-    size = (uint32_t)rcv;
-    rcv = uart_read(UART1, BLOCKING, &read);
-    size |= (uint32_t)rcv << 8;
-
-    uart_write_str(UART2, "Received firmware size: ");
-    uart_write_hex(UART2, size);
-    nl(UART2);
-
-
-
-    // Write new firmware size and version to Flash
-    // Create 32 bit word for flash programming, version is at lower address,
-    // size is at higher address
-    uint32_t metadata = ((size & 0xFFFF) << 16) | (version & 0xFFFF);
-    program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
-
-    uart_write(UART1, OK); // Acknowledge the metadata.
-
-
-    while (1) {
-
-        // Get two bytes for the length.
-        rcv = uart_read(UART1, BLOCKING, &read);
-        frame_length = (int)rcv << 8;
-        rcv = uart_read(UART1, BLOCKING, &read);
-        frame_length += (int)rcv;
-
-        // Get the number of bytes specified
-        for (int i = 0; i < frame_length; ++i) {
-            data[data_index] = uart_read(UART1, BLOCKING, &read);
-            data_index += 1;
-        }
-
-        // If we filed our page buffer, program it
-        if (data_index == FLASH_PAGESIZE || frame_length == 0) {
-            if (frame_length == 0) {
-                uart_write_str(UART2, "Got zero length frame.\n");
-            }
-
-            // Try to write flash and check for error
-            if (program_flash(page_addr, data, data_index)) {
-                uart_write(UART1, ERROR); // Reject the firmware
-                SysCtlReset();            // Reset device
-                return;
-            }
-
-            // Verify flash program
-            if (memcmp(data, (void*)page_addr, data_index) != 0) {
-                uart_write_str(UART2, "Flash check failed.\n");
-                uart_write(UART1, ERROR); // Reject the firmware
-                SysCtlReset();            // Reset device
-                return;
-            }
-#if 1
-            // Write debugging messages to UART2.
-            uart_write_str(UART2, "Page successfully programmed\nAddress: ");
-            uart_write_hex(UART2, page_addr);
-            uart_write_str(UART2, "\nBytes: ");
-            uart_write_hex(UART2, data_index);
-            nl(UART2);
-#endif
-
-            // Update to next page
-            page_addr += FLASH_PAGESIZE;
-            data_index = 0;
-
-            // If at end of firmware, go to main
-            if (frame_length == 0) {
-                uart_write(UART1, OK);
-                break;
-            }
-        } // if
-
-        uart_write(UART1, OK); // Acknowledge the frame.
-    }                          // while(1)
-}
-*/
 
 long program_flash(uint32_t page_addr, unsigned char* data,
                    unsigned int data_len) {
