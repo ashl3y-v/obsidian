@@ -47,16 +47,16 @@ def protect_firmware(infile, outfile, version, message):
         priv_key = secfile.read()
         priv_key = ECC.import_key(priv_key)
 
-    # Extract automatically generated initalization vector (IV)
+    # Extract automatically generated initalization vector (IV) / nonce
     with open(CRYPTO_DIR / "iv.txt", mode="rb") as ivfile:
-        iv = ivfile.read()
+        nonce = ivfile.read()
 
     # Pack version, length of firmware, and size into 3 little-endian shorts
     # makes 6 byte metadata
     metadata = struct.pack("<HHH", version, len(firmware), len(message))
 
-    # aes cipher, CBC
-    aes = AES.new(aes_key, AES.MODE_CBC, iv=iv)
+    # aes cipher, GCM, no authentication tag
+    aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
 
     # ECDSA signer, P-256 curve, for integrity and authenticity
     signer = DSS.new(priv_key, mode="fips-186-3")
