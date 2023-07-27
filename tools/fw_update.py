@@ -64,30 +64,30 @@ def send_metadata(ser, metadata, debug=False):
     ser.write(META)
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        time.sleep(0.1)
+        time.sleep(0.2)
 
     print("\tPacket accepted by bootloader!")
     ser.write(metadata)
 
     print("\tSending metadata!")
     print("\tAwaiting response...")
-    
-    sleep(0.2)
-    
+
+    time.sleep(0.2)
+
     # Version
-    
+
     b_version = ser.read(2)
-    
+
     # Versioning check
-    
+
     if b_version == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
-    
+
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
-    
-    sleep(0.2)
-    
+
+    time.sleep(0.2)
+
     # Version size
 
     b_size = bytes([])
@@ -96,9 +96,9 @@ def send_metadata(ser, metadata, debug=False):
 
     b_size = int(struct.unpack("<H", b_size)[0])
     print(f"\tVersion size echoed by bootloader: {b_size}")
-    
-    sleep(0.2)
-    
+
+    time.sleep(0.2)
+
     # Message length
 
     b_mlength = bytes([])
@@ -112,15 +112,14 @@ def send_metadata(ser, metadata, debug=False):
 
 
 def send_firmware(ser, firmware, debug=False):
-
     print("FIRMWARE:")
 
     # Handshake with bootloader to send firmware
     ser.write(CHUNK)
-    
+
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        time.sleep()
+        time.sleep(0.2)
 
     print("\tPacket accepted by bootloader!")
     print("\tSending firmware!")
@@ -133,20 +132,23 @@ def send_firmware(ser, firmware, debug=False):
         length = len(data)
 
         # Construct frame
-        frame = struct.pack(f'H{len(data)}s', length, data)
+        frame = struct.pack(f"H{len(data)}s", length, data)
 
         send_frame(ser, frame, debug=debug)
 
         print(f"Wrote frame {idx} ({len(frame)} bytes).")
-        sleep(0.2)
-
+        time.sleep(0.2)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
     ser.write(struct.pack(">H", 0x0000))
 
     resp = ser.read(1)  # Wait for an OK from the bootloader
     if resp != OK:
-        raise RuntimeError("ERROR: Bootloader responded to zero length frame with {}".format(repr(resp)))
+        raise RuntimeError(
+            "ERROR: Bootloader responded to zero length frame with {}".format(
+                repr(resp)
+            )
+        )
 
     return ser
 
@@ -159,11 +161,10 @@ def send_frame(ser, frame, debug=False):
 
     # Wait for an OK from the bootloader
     time.sleep(0.4)
-   
+
     resp = ser.read(1)
-    
+
     time.sleep(0.2)
-  
 
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
@@ -213,7 +214,7 @@ def update(ser, infile, debug):
         raise RuntimeError("Invalid signature, aborting.")
 
     ## Proceed to sending data.
-    
+
     # Send metadata
     print("\tSending metadata!")
     send_metadata(ser, signature + metadata, debug=debug)
@@ -222,12 +223,11 @@ def update(ser, infile, debug):
     print("\tSending firmware!")
     send_firmware(ser, firmware, debug=debug)
     print("Done writing firmware.")
-    
-    
+
     # Want to boot?
-    while (1):
+    while 1:
         boot_q = str(input("Enter B to boot the firmware. ")).strip()
-        if boot_q == 'B':
+        if boot_q == "B":
             break
     ser.write(BOOT)
 
