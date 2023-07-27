@@ -121,6 +121,7 @@ ${COMPILER}/main.axf: ${COMPILER}/uart.o
 ${COMPILER}/main.axf: ${COMPILER}/firmware.o
 ${COMPILER}/main.axf: ${COMPILER}/beaverssl.o
 ${COMPILER}/main.axf: ${COMPILER}/bootloader.o
+${COMPILER}/main.axf: ${COMPILER}/utility.o
 ${COMPILER}/main.axf: ${COMPILER}/startup_${COMPILER}.o
 ${COMPILER}/main.axf: ${STELLARIS}/driverlib/${COMPILER}-cm3/libdriver-cm3.a
 ${COMPILER}/main.axf: ${BEARSSL}/build/stellaris/libbearssl.a
