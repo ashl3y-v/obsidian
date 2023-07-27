@@ -89,15 +89,18 @@ int main(void) {
     int read;
     while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
-        switch (request) {
-        case UPDATE:
-            uart_write(UART1, OK);
-            uart_write_str(UART2, "Received a request to update firmware.\n");
-            update_firmware();
-            break;
-        case BOOT:
-            uart_write_str(UART2, "Received a request to boot firmware.\n");
-            break;
+        switch (request)
+        {
+            case UPDATE:
+                uart_write(UART1, OK);
+                uart_write_str(UART2, "Received a request to update firmware.\n");
+                update_firmware();
+                break;
+                
+            case BOOT:
+                uart_write_str(UART2, "Received a request to boot firmware.\n");
+                break;
+                
         }
     }
 }
@@ -174,7 +177,7 @@ void update_firmware() {
 
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
-        uart_write_str(UART2, "One packet.\n");
+        uart_write_str(UART2, "Packet received.\n");
 
         //char str[20];
         //sprintf(str, "%d", frame_length);
@@ -185,7 +188,8 @@ void update_firmware() {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
         }
-
+        
+        
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
             uart_write_str(UART1, "New flash page.");
@@ -217,16 +221,21 @@ void update_firmware() {
             // Update to next page
             page_addr += FLASH_PAGESIZE;
             data_index = 0;
+            
+        } 
+        uart_write(UART1, OK);
 
-            // If at end of firmware, go to main
-            if (frame_length == 0) {
-                uart_write(UART1, OK);
-                uart_write_str(UART2, "End of firmware reached.");
-                break;
-            }
+        if (frame_length == 0) {
+            uart_write(UART1, OK);
+            uart_write_str(UART2, "End of firmware reached.");
+            break;
         }
-        //
+        
     }
+    uart_write(UART1, OK);
+    uart_write_str(UART2, "Finished writing firmware.\n");
+
+        
 }
 
 /*
