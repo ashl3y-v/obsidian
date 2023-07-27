@@ -194,7 +194,7 @@ def update(ser, infile, debug):
     while response != OK:
         response = ser.read(2)
 
-    print("\tPacket accepted by bootloader!\n")
+    print("\tPacket accepted by bootloader!")
 
     # Parse firmware blob
     signature = firmware_blob[0:64]
