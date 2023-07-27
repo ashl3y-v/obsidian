@@ -137,7 +137,7 @@ metadata load_metadata() {
     }
     return mdata;
 
-
+    // Confirm metadata
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.size), sizeof(uint16_t));
     itoa(mdata.size, buffer, 10);
     uart_write_str(UART2, "Firmware size received: ");
@@ -177,7 +177,7 @@ void update_firmware() {
     uart_write_str(UART2, "CHUNK packet received on bootloader.\n");
     uart_write(UART1, OK);
 
-    // whhhhoooooo here we go
+    //...... whhhhoooooo here we go
     uint16_t frame_length = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
