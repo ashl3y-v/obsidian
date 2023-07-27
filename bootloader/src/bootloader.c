@@ -170,10 +170,9 @@ void update_firmware() {
     uint32_t rcv = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
+    
 
-    while (1) {
-
-        // Get the frame length
+    for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
         uart_write_str(UART2, "One packet.\n");
 
