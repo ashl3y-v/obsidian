@@ -198,13 +198,13 @@ void update_firmware() {
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.message_size, sizeof(uint16_t));
 
-    // Initialize aes gcm
-    br_aes_ct_ctr_keys bc;
-    br_gcm_context gc;
-    br_aes_ct_ctr_init(&bc, key, 32);
-    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
-    br_gcm_reset(&gc, iv, 16);
-    br_gcm_flip(&gc);
+    // Initialize aes cbc
+    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
+    br_aes_gen_cbcdec_keys v_dc;
+    const br_block_cbcdec_class** dc;
+
+    dc = &v_dc.vtable;
+    vd->init(dc, key, KEY_LEN);
 
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
@@ -252,7 +252,7 @@ void update_firmware() {
 
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
-            br_gcm_run(&gc, 0, data, ct_len);
+            vd->run(dc, iv, ct, len);
 
             uart_write_str(UART1, "New flash page.");
             if (!frame_length) {
@@ -315,16 +315,15 @@ void update_firmware() {
     br_aes_ct_ctr_init(&bc, key, 32);
     br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
 
-    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d, 0x95, 0x1e, 0xbf, 0x4,0x21};
+    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d,
+                     0x95, 0x1e, 0xbf, 0x4,  0x21};
     uart_write_hex_bytes(UART2, data, 16);
     br_gcm_reset(&gc, nonce, 12);
     br_gcm_flip(&gc);
     br_gcm_run(&gc, 0, data, sizeof(data));
-    uart_write_hex_bytes(UART2, data, 16);   
+    uart_write_hex_bytes(UART2, data, 16);
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
-
-    
 }
 
 void load_initial_firmware(void) {
