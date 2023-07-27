@@ -108,16 +108,16 @@ def send_metadata(ser, metadata, debug=False):
 
     return True
 
-
 def send_firmware(ser, firmware, debug=False):
     print("FIRMWARE:")
 
     # Handshake with bootloader to send firmware
+    time.sleep(1)
     ser.write(CHUNK)
 
-    print("\tPacket sent!")
+    print("\tCHUNK Packet sent!")
     while ser.read(HEADER) != OK:
-        time.sleep(0.2)
+        time.sleep(0.5)
 
     print("\tPacket accepted by bootloader!")
     print("\tSending firmware!")
@@ -132,6 +132,8 @@ def send_firmware(ser, firmware, debug=False):
         # Construct frame
         frame = struct.pack(f"H{len(data)}s", length, data)
 
+    
+        time.sleep(0.5)
         send_frame(ser, frame, debug=debug)
 
         if debug:
