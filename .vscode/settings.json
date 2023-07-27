@@ -2,6 +2,8 @@
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "stdint.h": "c",
-        "secrets.h": "c"
+        "secrets.h": "c",
+        "uart.h": "c",
+        "string.h": "c"
     }
 }
