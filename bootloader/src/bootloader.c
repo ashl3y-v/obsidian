@@ -124,6 +124,7 @@ metadata load_metadata() {
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
 
     char buffer[5];
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
     itoa(mdata.version, buffer, 10);
     uart_write_str(UART2, "Firmware version received: ");
     uart_write_str(UART2, buffer);
