@@ -77,7 +77,7 @@ void init_interfaces()
     // Bootloader Output
     uart_init(UART2); 
 
-    // load_initial_firmware();
+    load_initial_firmware();
     uart_write_str(UART2, "Obsidian Update Interface\n");
     uart_write_str(UART2, 
                         "Send \"U\" to update, and \"B\" to run the firmware.\n");
@@ -282,7 +282,7 @@ int main(void) {
     }
 }
 
-/*
+*/
 void load_initial_firmware(void) {
 
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
@@ -346,7 +346,7 @@ void load_initial_firmware(void) {
         }
     }
 }
-
+/*
 
 void load_firmware(void) {
     int frame_length = 0;
