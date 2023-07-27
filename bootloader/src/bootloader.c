@@ -186,7 +186,7 @@ void update_firmware()
         uart_read_wrp(UART1, BLOCKING, &read, &frame_length, 2);
 
         // Get the frame bytes
-        for (int i = 0; i < frame_length; ++i) {
+        for (int i = 0; i < frame_length; i++) {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
             uart_write(UART1, OK); // Ack
