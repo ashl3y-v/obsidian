@@ -300,8 +300,6 @@ void update_firmware() {
 
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
-
-    
 }
 
 void load_initial_firmware(void) {
