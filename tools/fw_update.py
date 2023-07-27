@@ -76,16 +76,15 @@ def send_metadata(ser, metadata, debug=False):
     
     # Versioning check
 
-    b_version = bytes([])
-    if b_version == ERROR:
+    b_version = ser.read(2)
+    if b_version[1] == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
+    
     
     # If version normal:
     # Version
-
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
-    
     
     sleep(0.2)
     
@@ -122,7 +121,7 @@ def send_firmware(ser, firmware, debug=False):
     
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        time.sleep(0.1)
+        time.sleep()
 
     print("\tPacket accepted by bootloader!")
     print("\tSending firmware!")
