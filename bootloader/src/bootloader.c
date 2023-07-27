@@ -230,6 +230,8 @@ void update_firmware() {
             uart_write_str(UART2, "End of firmware reached.");
             break;
         }
+
+        
         
     }
     uart_write(UART1, OK);
