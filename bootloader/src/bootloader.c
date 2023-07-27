@@ -198,6 +198,7 @@ void update_firmware() {
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.message_size, sizeof(uint16_t));
 
+<<<<<<< HEAD
     // Initialize aes cbc
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
@@ -205,6 +206,15 @@ void update_firmware() {
 
     dc = &v_dc.vtable;
     vd->init(dc, key, KEY_LEN);
+=======
+    // Initialize aes gcm
+    br_aes_ct_ctr_keys bc;
+    br_gcm_context gc;
+    br_aes_ct_ctr_init(&bc, AES_KEY, AES_KEY);
+    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
+    br_gcm_reset(&gc, IV_KEY, IV_KEY_LENGTH);
+
+>>>>>>> firmware actually writes to flash now
 
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
@@ -251,10 +261,17 @@ void update_firmware() {
         // memcpy(firmware + data_index, &(data[data_index]), frame_length);
 
         // If we filed our page buffer, program it
+<<<<<<< HEAD
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
             vd->run(dc, iv, ct, len);
+=======
+        if (data_index == FLASH_PAGESIZE  || frame_length == 0) {         
+            br_gcm_flip(&gc);
+            br_gcm_run(&gc, 0, data, FLASH_PAGESIZE);
+            br_gcm_reset(&gc, IV_KEY, IV_KEY_LENGTH);
+>>>>>>> firmware actually writes to flash now
 
-            uart_write_str(UART1, "New flash page.");
+            uart_write_str(UART2, "New flash page.");
             if (!frame_length) {
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
@@ -307,16 +324,17 @@ void update_firmware() {
     else
         uart_write_str(UART2, "[VERIFICATION] ECC Verification Failed\n");
 
-    // testing
-    char nonce[] = "aaaaaaaaaaaa";
-    char key[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    br_aes_ct_ctr_keys bc;
-    br_gcm_context gc;
-    br_aes_ct_ctr_init(&bc, key, 32);
-    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
+        
 
+   
+
+<<<<<<< HEAD
     char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d,
                      0x95, 0x1e, 0xbf, 0x4,  0x21};
+=======
+    /*
+    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d, 0x95, 0x1e, 0xbf, 0x4,0x21};
+>>>>>>> firmware actually writes to flash now
     uart_write_hex_bytes(UART2, data, 16);
     br_gcm_reset(&gc, nonce, 12);
     br_gcm_flip(&gc);
@@ -324,6 +342,52 @@ void update_firmware() {
     uart_write_hex_bytes(UART2, data, 16);
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
+<<<<<<< HEAD
+=======
+    */
+
+    
+}
+
+/*
+int main(void) {
+    // A 'reset' on UART0 will re-start this code at the top of main, won't
+    // clear flash, but will clean ram.
+
+    // Initialize UART channels
+    // 0: Reset
+    // 1: Host Connection
+    // 2: Debug
+    uart_init(UART0);
+    uart_init(UART1);
+    uart_init(UART2);
+
+    // Enable UART0 interrupt
+    IntEnable(INT_UART0);
+    IntMasterEnable();
+
+    load_initial_firmware(); // note the short-circuit behavior in this
+                             // function, it doesn't finish running on reset!
+
+    uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
+    uart_write_str(UART2,
+                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
+    uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
+
+    int resp;
+    while (1) {
+        uint32_t instruction = uart_read(UART1, BLOCKING, &resp);
+        if (instruction == UPDATE) {
+            uart_write_str(UART1, "U");
+            load_firmware();
+            uart_write_str(UART2, "Loaded new firmware.\n");
+            nl(UART2);
+        } else if (instruction == BOOT) {
+            uart_write_str(UART1, "B");
+            boot_firmware();
+        }
+    }
+>>>>>>> firmware actually writes to flash now
 }
 
 void load_initial_firmware(void) {
