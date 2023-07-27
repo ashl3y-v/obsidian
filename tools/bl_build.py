@@ -132,8 +132,7 @@ def generate_secrets():
     except Exception as excep:
         print(f"ERROR: Error while attempting to generate build secrets.\n{excep}")
         exit(SECRET_ERROR)
-    else:
-        print("All build secrets were generated succesfully.")
+    
 
 
 def main(args):

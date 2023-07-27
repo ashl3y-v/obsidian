@@ -79,12 +79,17 @@ def send_metadata(ser, metadata, debug=False):
     b_version = bytes([])
     if b_version == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
+    
+    # If version normal:
+    # Version
 
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
     
     
     sleep(0.2)
+    
+    # Version size
 
     b_size = bytes([])
     while len(b_size) != 2:
@@ -94,6 +99,8 @@ def send_metadata(ser, metadata, debug=False):
     print(f"\tVersion size echoed by bootloader: {b_size}")
     
     sleep(0.2)
+    
+    # Message length
 
     b_mlength = bytes([])
     while len(b_mlength) != 2:
@@ -209,11 +216,13 @@ def update(ser, infile, debug):
     print("\tSending metadata!")
     send_metadata(ser, metadata, debug=debug)
 
+    # Send firmware
     print("\tSending firmware!")
     send_firmware(ser, firmware, debug=debug)
-    
     print("Done writing firmware.")
     
+    
+    # Want to boot?
     while (1):
         boot_q = str(input("Enter B to boot the firmware. ")).strip()
         if boot_q == 'B':
