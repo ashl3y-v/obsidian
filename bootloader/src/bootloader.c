@@ -307,8 +307,24 @@ void update_firmware() {
     else
         uart_write_str(UART2, "[VERIFICATION] ECC Verification Failed\n");
 
+    // testing
+    char nonce[] = "aaaaaaaaaaaa";
+    char key[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    br_aes_ct_ctr_keys bc;
+    br_gcm_context gc;
+    br_aes_ct_ctr_init(&bc, key, 32);
+    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
+
+    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d, 0x95, 0x1e, 0xbf, 0x4,0x21};
+    uart_write_hex_bytes(UART2, data, 16);
+    br_gcm_reset(&gc, nonce, 12);
+    br_gcm_flip(&gc);
+    br_gcm_run(&gc, 0, data, sizeof(data));
+    uart_write_hex_bytes(UART2, data, 16);   
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
+
+    
 }
 
 /*
