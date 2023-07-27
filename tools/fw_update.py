@@ -10,12 +10,6 @@ A frame consists of two sections:
 --------------------
 | Length | Data... |
 --------------------
-
-In our case, the data is from one line of the Intel Hex formated .hex file
-
-We write a frame to the bootloader, then wait for it to respond with an
-OK message so we can write the next frame. The OK message in this case is
-just a zero
 """
 
 import argparse
@@ -70,7 +64,7 @@ def send_metadata(ser, metadata, debug=False):
     ser.write(META)
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        time.sleep()
+        time.sleep(0.1)
 
     print("\tPacket accepted by bootloader!")
     ser.write(metadata)
@@ -79,19 +73,22 @@ def send_metadata(ser, metadata, debug=False):
     print("\tAwaiting response...")
     
     sleep(0.2)
+    
+    # Versioning check
 
     b_version = bytes([])
-    while len(b_version) != 2:
-        b_version = ser.read(2)
+    if b_version == ERROR:
+        raise RuntimeError("Invalid version request, aborting.")
 
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
+    
     
     sleep(0.2)
 
     b_size = bytes([])
     while len(b_size) != 2:
-        b_size = ser.read(2)
+        b_size = ser.read(HEADER)
 
     b_size = int(struct.unpack("<H", b_size)[0])
     print(f"\tVersion size echoed by bootloader: {b_size}")
@@ -100,7 +97,7 @@ def send_metadata(ser, metadata, debug=False):
 
     b_mlength = bytes([])
     while len(b_mlength) != 2:
-        b_mlength = ser.read(2)
+        b_mlength = ser.read(HEADER)
 
     b_mlength = int(struct.unpack("<H", b_mlength)[0])
     print(f"\tMessage length echoed by bootloader: {b_mlength}")
@@ -118,7 +115,7 @@ def send_firmware(ser, firmware, debug=False):
     
     print("\tPacket sent!")
     while ser.read(HEADER) != OK:
-        time.sleep()
+        time.sleep(0.1)
 
     print("\tPacket accepted by bootloader!")
     print("\tSending firmware!")
@@ -183,7 +180,7 @@ def update(ser, infile, debug):
     ser.write(UPDATE)
     print("\tPacket sent!")
     while response != OK:
-        response = ser.read(2)
+        response = ser.read(HEADER)
 
     print("\tPacket accepted by bootloader!")
 
