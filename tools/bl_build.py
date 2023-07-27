@@ -53,7 +53,9 @@ def make_bootloader(**keys) -> bool:
 
     # Error checking
     # print(f"command: \n\t{command}")
-
+    
+    
+    # Call the make command
     call("make clean", shell=True)
     status = call(command, shell=True)
     if status == 0:
@@ -92,7 +94,7 @@ def generate_secrets():
         with open(CRYPTO_DIR / "iv.txt", mode="wb") as file:
             file.write(iv)
             
-
+        # Write to the secrets file
         # Temporary (but ugly) fix because Makefile command line constants are not working
         with open(CRYPTO_DIR / "secrets.h", mode="wb") as file:
             file.write(b"#ifndef SECRETS_H\n")
@@ -155,8 +157,13 @@ def main(args):
             )
         )
 
+    # Set up secrets
     secrets = generate_secrets()
+    
+    # Move the initial firmware
     copy_initial_firmware(binary_path)
+    
+    # Run make commands
     make_bootloader(**secrets)
 
 
