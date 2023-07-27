@@ -127,7 +127,6 @@ metadata load_metadata() {
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    
     // Version checks
     uint16_t old_version = *fw_version_address;
     if (mdata.version != 0 && mdata.version < old_version) {
@@ -135,8 +134,7 @@ metadata load_metadata() {
         SysCtlReset();            // goodbye device kek
         return;
     }
-    return mdata;
-
+    
     // Confirm metadata
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.size), sizeof(uint16_t));
     itoa(mdata.size, buffer, 10);
@@ -144,8 +142,7 @@ metadata load_metadata() {
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.message_size),
-                  sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.message_size), sizeof(uint16_t));
     itoa(mdata.message_size, buffer, 10);
     uart_write_str(UART2, "Release message size received: ");
     uart_write_str(UART2, buffer);
@@ -159,9 +156,8 @@ metadata load_metadata() {
 
 void update_firmware() {
     metadata mdata = load_metadata();
-    if (!mdata.size) {
-        uart_write_str(UART2, "Something went wrong trying to load the "
-                              "metadata; restarting device\n");
+    if (mdata.size == 0) {
+        uart_write_str(UART2, "Something went wrong trying to load the metadata; restarting device\n");
         SysCtlReset();
     }
 
