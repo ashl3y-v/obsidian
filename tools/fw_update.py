@@ -75,17 +75,17 @@ def send_metadata(ser, metadata, debug=False):
     sleep(0.2)
     
     
+    # Version
+    
     b_version = bytes([])
     while len(b_version) != 2:
         b_version = ser.read(HEADER)
         
     # Versioning check
-    """
-    if b_version[0] == ERROR:
-        raise RuntimeError("Invalid version request, aborting.")"""
     
-    # If version normal:
-    # Version
+    if b_version[0] == ERROR:
+        raise RuntimeError("Invalid version request, aborting.")
+    
     b_version = int(struct.unpack("<H", b_version)[0])
     print(f"\tVersion echoed by bootloader: {b_version}")
     
