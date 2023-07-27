@@ -62,7 +62,7 @@ def send_metadata(ser, metadata, debug=False):
 
     # Handshake with bootloader to send metadata
     ser.write(META)
-    print("\tPacket sent!")
+    print("\tMETA packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.2)
 
@@ -115,7 +115,7 @@ def send_firmware(ser, firmware, debug=False):
     time.sleep(1)
     ser.write(CHUNK)
 
-    print("\tCHUNK Packet sent!")
+    print("\tCHUNK packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.5)
 
@@ -199,22 +199,24 @@ def update(ser, infile, debug):
     metadata = firmware_blob[64:70]
     firmware = firmware_blob[70:]
 
+
+
+    # Check for integrity compromise using SHA hash
+    print("\tVerifying firmware data!")
+    hasher = SHA256.new(metadata + firmware)
+    hasherd = SHA256.new(metadata)
+    if debug:
+        print("Metadata-only SHA256 hash: ", hasherd.hexdigest())
+        print("Complete SHA256 hash: ", hasher.hexdigest())
+    
     # Check for integrity compromise using ECC public key signature
     key = None
     with open(CRYPTO_DIRECTORY / "ecc_public.raw", "rb") as fp:
         key = ECC.import_key(fp.read(), curve_name="secp256r1")
-
-    print("\tVerifying firmware data!")
-    hasher = SHA256.new(metadata + firmware)
-    
-    # Check for integrity compromise using SHA hash
-    hasherd = SHA256.new(metadata)
-    print("metadata only sha256 signature: ", hasherd.hexdigest())
-    print("entire file signature sha256: ", hasher.hexdigest())
     verifier = DSS.new(key, "fips-186-3")
     try:
         verifier.verify(hasher, signature)
-        print("\tHash verified on the client.")
+        print("\tSignature verified on the client.")
     except ValueError:
         raise RuntimeError("Invalid signature, aborting.")
 

@@ -229,7 +229,7 @@ void update_firmware() {
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
 
         // Chunks should be 256 bytes or less
-        uart_write_str(UART2, "[FIRMARE] Waiting for new frame..\n");
+        uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
