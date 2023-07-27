@@ -1,6 +1,15 @@
 #include "utility.h"
 
+#define ERROR (uint8_t)('E')
+void reject()
+{
+    // Re-enable interrupts if they were disabled
+    IntMasterEnable();
 
+    // We failed, oh no...
+    uart_write(UART1, ERROR); 
+    SysCtlReset();
+}
 
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
     for (uint8_t* cursor = start; cursor < (start + len); cursor += 1) {
@@ -13,17 +22,17 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
         } else {
             right_nibble += 0x30;
         }
-        byte_str[1] = right_nibble;
+        byte_str[1] = tolower(right_nibble);
         if (left_nibble > 9) {
             left_nibble += 0x37;
         } else {
             left_nibble += 0x30;
         }
-        byte_str[0] = left_nibble;
+        byte_str[0] = tolower(left_nibble);
         byte_str[2] = '\0';
 
         uart_write_str(uart, byte_str);
-        uart_write_str(uart, " ");
+        // uart_write_str(uart, " "); uncomment if you want space between your bytes
     }
 }
 
