@@ -6,6 +6,7 @@
         "uart.h": "c",
         "string.h": "c",
         "beaverssl.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "utility.h": "c"
     }
 }
