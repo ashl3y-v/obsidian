@@ -103,6 +103,7 @@ int main(void) {
 
         case BOOT:
             uart_write_str(UART2, "Received a request to boot firmware.\n");
+            boot_firmware();
             break;
         }
     }
@@ -173,6 +174,10 @@ metadata load_metadata() {
         reject();
     }
 
+    //*fw_version = mdata.version;
+    //*fw_size_address = mdata.size;
+    //*fw_release_message_address = mdata.message_size;
+
     uart_write_str(UART2, "[METADATA] Loaded metadata succesfully\n");
     return mdata;
 }
@@ -198,23 +203,6 @@ void update_firmware() {
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.message_size, sizeof(uint16_t));
 
-<<<<<<< HEAD
-    // Initialize aes cbc
-    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
-    br_aes_gen_cbcdec_keys v_dc;
-    const br_block_cbcdec_class** dc;
-
-    dc = &v_dc.vtable;
-    vd->init(dc, key, KEY_LEN);
-=======
-    // Initialize aes gcm
-    br_aes_ct_ctr_keys bc;
-    br_gcm_context gc;
-    br_aes_ct_ctr_init(&bc, AES_KEY, AES_KEY);
-    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
-    br_gcm_reset(&gc, IV_KEY, IV_KEY_LENGTH);
-
->>>>>>> firmware actually writes to flash now
 
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
@@ -253,65 +241,25 @@ void update_firmware() {
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
+        // I kept this in here just in case but in hindsight this will never
+        // be reached because we increment 256 bytes at a time
+        if (!frame_length) {
+            uart_write(UART1, OK);
+            uart_write_str(UART2, "End of firmware reached.");
+            break;
+        }
+
         // Update the current SHA256 hash with the data we just received
         uart_read_wrp(UART1, BLOCKING, &read, data + data_index, frame_length);
         br_sha256_update(&sha256, data + data_index, frame_length);
         data_index += frame_length;
 
-        // memcpy(firmware + data_index, &(data[data_index]), frame_length);
-
-        // If we filed our page buffer, program it
-<<<<<<< HEAD
-        if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
-            vd->run(dc, iv, ct, len);
-=======
-        if (data_index == FLASH_PAGESIZE  || frame_length == 0) {         
-            br_gcm_flip(&gc);
-            br_gcm_run(&gc, 0, data, FLASH_PAGESIZE);
-            br_gcm_reset(&gc, IV_KEY, IV_KEY_LENGTH);
->>>>>>> firmware actually writes to flash now
-
-            uart_write_str(UART2, "New flash page.");
-            if (!frame_length) {
-                uart_write_str(UART2, "Got zero length frame.\n");
-            }
-
-            // Try to write flash and check for error
-            if (program_flash(page_addr, data, data_index)) {
-                uart_write(UART1, ERROR);
-                SysCtlReset(); // goodbye device kek
-                return;
-            }
-
-            // Verify flash program
-            if (memcmp(data, (void*)page_addr, data_index) != 0) {
-                uart_write_str(UART2, "Flash check failed, aborting.\n");
-                uart_write(UART1, ERROR);
-                SysCtlReset(); // goodbye device kek
-                return;
-            }
-
-            uart_write_str(UART2, "Page successfully programmed at address ");
-            uart_write_hex(UART2, page_addr);
-            uart_write_str(UART2, "\nBytes: ");
-            uart_write_hex(UART2, data_index);
-            nl(UART2);
-
-            // Update to next page
-            page_addr += FLASH_PAGESIZE;
-            data_index = 0;
-        }
+        memcpy(firmware + data_index, data + data_index, frame_length);
 
         // Let fw_update.py know that we've received the packet and processed it
         uart_write(UART1, OK);
-
-        // If it ran out
-        if (frame_length == 0) {
-            uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.");
-            break;
-        }
     }
+    uart_write(UART1, OK);
     br_sha256_out(&sha256, hash);
 
     uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
@@ -328,67 +276,20 @@ void update_firmware() {
 
    
 
-<<<<<<< HEAD
-    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d,
-                     0x95, 0x1e, 0xbf, 0x4,  0x21};
-=======
     /*
     char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d, 0x95, 0x1e, 0xbf, 0x4,0x21};
->>>>>>> firmware actually writes to flash now
     uart_write_hex_bytes(UART2, data, 16);
     br_gcm_reset(&gc, nonce, 12);
     br_gcm_flip(&gc);
     br_gcm_run(&gc, 0, data, sizeof(data));
-    uart_write_hex_bytes(UART2, data, 16);
+    uart_write_hex_bytes(UART2, data, 16);   
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
-<<<<<<< HEAD
-=======
     */
 
     
 }
 
-/*
-int main(void) {
-    // A 'reset' on UART0 will re-start this code at the top of main, won't
-    // clear flash, but will clean ram.
-
-    // Initialize UART channels
-    // 0: Reset
-    // 1: Host Connection
-    // 2: Debug
-    uart_init(UART0);
-    uart_init(UART1);
-    uart_init(UART2);
-
-    // Enable UART0 interrupt
-    IntEnable(INT_UART0);
-    IntMasterEnable();
-
-    load_initial_firmware(); // note the short-circuit behavior in this
-                             // function, it doesn't finish running on reset!
-
-    uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
-    uart_write_str(UART2,
-                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
-
-    int resp;
-    while (1) {
-        uint32_t instruction = uart_read(UART1, BLOCKING, &resp);
-        if (instruction == UPDATE) {
-            uart_write_str(UART1, "U");
-            load_firmware();
-            uart_write_str(UART2, "Loaded new firmware.\n");
-            nl(UART2);
-        } else if (instruction == BOOT) {
-            uart_write_str(UART1, "B");
-            boot_firmware();
-        }
-    }
->>>>>>> firmware actually writes to flash now
-}
 
 void load_initial_firmware(void) {
 

@@ -60,7 +60,7 @@ def protect_firmware(infile, outfile, version, message):
     signer = DSS.new(priv_key, mode="fips-186-3")
 
     # format: signature[metadata + aes[firmware + message] + 0x00]
-    blob = metadata + aes.encrypt(firmware + message.encode() + b"\x00")
+    blob = metadata + aes.encrypt(pad(firmware + message.encode() + b"\x00", 16))
 
     # signs hash, not pure
     h = SHA256.new(blob)
