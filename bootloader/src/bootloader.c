@@ -169,7 +169,6 @@ void update_firmware() {
 
     // whhhhoooooo here we go
     uint16_t frame_length = 0;
-    uint32_t rcv = 0;
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
     
