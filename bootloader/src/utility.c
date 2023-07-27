@@ -1,6 +1,7 @@
 #include "utility.h"
 
 
+
 void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
     for (uint8_t* cursor = start; cursor < (start + len); cursor += 1) {
         uint8_t data = *((uint8_t*)cursor);
@@ -26,7 +27,7 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
     }
 }
 
-*/
+
 
 void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes)
 {
