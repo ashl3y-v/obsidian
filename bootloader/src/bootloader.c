@@ -57,9 +57,9 @@ uint8_t* fw_release_message_address;
 
 // Program functions
 void update_firmware();
-metadata load_metadata();
+void load_metadata(metadata* mdata);
 
-unsigned char data[FLASH_PAGESIZE];
+
 
 // Setup the bootloader for communication
 void init_interfaces() {
@@ -109,11 +109,13 @@ int main(void) {
     }
 }
 
-metadata load_metadata() {
+void load_metadata(metadata* mdata) {
     // Wait until we receive a metadata header
+    uart_write_str(UART2, "hello, world!");
     int read;
     while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
+        uart_write_str(UART2, "hello!");
         if (request == META)
             break;
     }
@@ -123,54 +125,54 @@ metadata load_metadata() {
     uart_write(UART1, OK);
 
     // Start reading in information about our metadata
-    metadata mdata = {0};
-    uart_read_wrp(UART1, BLOCKING, &read, mdata.signature, SIGNATURE_SIZE);
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata.version),
+    uart_read_wrp(UART1, BLOCKING, &read, mdata->signature, SIGNATURE_SIZE);
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->version),
                   sizeof(uint16_t));
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata.size),
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->size),
                   sizeof(uint16_t));
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata.message_size),
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->message_size),
                   sizeof(uint16_t));
 
     uart_write_str(UART2, "[META] File Signature: ");
-    uart_write_hex_bytes(UART2, mdata.signature, SIGNATURE_SIZE);
+    uart_write_hex_bytes(UART2, mdata->signature, SIGNATURE_SIZE);
     nl(UART2);
 
     uart_write_str(UART2, "[META] Version: ");
 
     char buffer[5];
-    itoa(mdata.version, buffer, 10);
+    itoa(mdata->version, buffer, 10);
     uart_write_str(UART2, buffer);
-    uart_write_wrp(UART1, (uint8_t*)(&mdata.version), sizeof(uint16_t));
+    uart_write_wrp(UART1, (uint8_t*)(&mdata->version), sizeof(uint16_t));
     nl(UART2);
 
     uart_write_str(UART2, "[META] Size: ");
-    itoa(mdata.size, buffer, 10);
+    itoa(mdata->size, buffer, 10);
     uart_write_str(UART2, buffer);
-    uart_write_wrp(UART1, (uint8_t*)(&mdata.size), sizeof(uint16_t));
+    uart_write_wrp(UART1, (uint8_t*)(&mdata->size), sizeof(uint16_t));
     nl(UART2);
 
     uart_write_str(UART2, "[META] Message Size: ");
-    itoa(mdata.message_size, buffer, 10);
+    itoa(mdata->message_size, buffer, 10);
     uart_write_str(UART2, buffer);
-    uart_write_wrp(UART1, (uint8_t*)(&mdata.message_size), sizeof(uint16_t));
+    uart_write_wrp(UART1, (uint8_t*)(&mdata->message_size), sizeof(uint16_t));
     nl(UART2);
 
     // Prevent rollbacks except for debug binaries
     uint16_t old_version = *fw_version_address;
-    if (mdata.version != 0 && mdata.version < old_version) {
-        uart_write_str(UART1, "[METADATA] Version not supported\n");
+    if (mdata->version != 0 && mdata->version < old_version) {
+        uart_write_str(UART2, "[METADATA] Version not supported\n");
         reject();
     }
 
     // Bounds checking
-    if (mdata.size > MAX_FIRMWARE_SIZE) {
-        uart_write_str(UART1, "[METADATA] Firmware size not supported\n");
+    if (mdata->size > MAX_FIRMWARE_SIZE) {
+        uart_write_str(UART2, "[METADATA] Firmware size not supported\n");
         reject();
     }
 
-    if (mdata.message_size > MAX_MESSAGE_SIZE) {
-        uart_write_str(UART1, "[METADATA] Release message not supported\n");
+
+    if (mdata->message_size > MAX_MESSAGE_SIZE) {
+        uart_write_str(UART2, "[METADATA] Release message not supported\n");
         reject();
     }
 
@@ -183,11 +185,10 @@ metadata load_metadata() {
 }
 
 void update_firmware() {
-
-    unsigned char firmware[UINT16_MAX] = {0};
-
     // We don't want to proceed if we have no metadata...
-    metadata mdata = load_metadata();
+    metadata mdata = {0};
+    load_metadata(&mdata);
+    
     if (!mdata.size) {
         uart_write_str(UART2, "[FIRMWARE] Failed to load firmware\n");
         SysCtlReset();
@@ -223,19 +224,16 @@ void update_firmware() {
     uart_write_str(UART2, "[FIRMWARE] CHUNK packet received\n");
     uart_write(UART1, OK);
 
-    // Wouldn't want your device to reset mid update..
-    IntMasterEnable();
 
     //...... whhhhoooooo here we go
     uint16_t frame_length = 0;
     uint32_t data_index = 0;
-    uint32_t page_addr = FW_BASE;
 
-    // Set up decryption stuff
+    uint8_t data[FLASH_PAGESIZE] = {};
+    uint8_t firmware[MAX_FIRMWARE_SIZE] = {0};
 
     // Iterate over the size of the firmware
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
-
         // Chunks should be 256 bytes or less
         uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
@@ -254,17 +252,21 @@ void update_firmware() {
         br_sha256_update(&sha256, data + data_index, frame_length);
         data_index += frame_length;
 
+        // Move encrypted firmware to a buffer to be decrypted in chunks
         memcpy(firmware + data_index, data + data_index, frame_length);
 
         // Let fw_update.py know that we've received the packet and processed it
         uart_write(UART1, OK);
     }
     uart_write(UART1, OK);
+
     br_sha256_out(&sha256, hash);
 
     uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
     uart_write_hex_bytes(UART2, hash, 32);
     nl(UART2);
+
+    
 
     if (br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
                               &mdata.signature, SIGNATURE_SIZE))

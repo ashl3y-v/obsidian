@@ -7,6 +7,10 @@
         "string.h": "c",
         "beaverssl.h": "c",
         "interrupt.h": "c",
-        "utility.h": "c"
+        "utility.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     }
 }
