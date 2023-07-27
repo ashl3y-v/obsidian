@@ -74,12 +74,15 @@ def send_metadata(ser, metadata, debug=False):
     
     sleep(0.2)
     
-    # Versioning check
-
-    b_version = ser.read(2)
-    if b_version[1] == ERROR:
-        raise RuntimeError("Invalid version request, aborting.")
     
+    b_version = bytes([])
+    while len(b_version) != 2:
+        b_version = ser.read(HEADER)
+        
+    # Versioning check
+    """
+    if b_version[0] == ERROR:
+        raise RuntimeError("Invalid version request, aborting.")"""
     
     # If version normal:
     # Version
@@ -112,7 +115,6 @@ def send_metadata(ser, metadata, debug=False):
 
 
 def send_firmware(ser, firmware, debug=False):
-    response = None
 
     print("FIRMWARE:")
 

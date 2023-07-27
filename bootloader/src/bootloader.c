@@ -129,15 +129,14 @@ metadata load_metadata() {
     uart_write_str(UART2, buffer);
     nl(UART2);
 
-    // Version checks
+    /*// Version checks
     uint16_t old_version = *fw_version_address;
     if (mdata.version != 0 && mdata.version < old_version) {
         uart_write(UART1, ERROR); 
         SysCtlReset();            // goodbye device kek
         return;
-    }
-    
-    // Confirm metadata
+    }*/
+
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.size), sizeof(uint16_t));
     itoa(mdata.size, buffer, 10);
     uart_write_str(UART2, "Firmware size received: ");
@@ -153,7 +152,6 @@ metadata load_metadata() {
     uart_write_wrp(UART1, &(mdata.version), sizeof(uint16_t));
     uart_write_wrp(UART1, &(mdata.size), sizeof(uint16_t));
     uart_write_wrp(UART1, &(mdata.message_size), sizeof(uint16_t));
-
 }
 
 void update_firmware() {
