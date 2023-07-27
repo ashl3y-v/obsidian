@@ -192,7 +192,8 @@ void update_firmware()
         //sprintf(str, "%d", frame_length);
         //uart_write_str(UART2, frame_length);
 
-        for (int didx = 0; didx < frame_length; didx++){
+        // Get the frame bytes
+        for (int i = 0; i < frame_length; i++) {
             data[data_index] = uart_read(UART1, BLOCKING, &read);
             data_index += 1;
         }
