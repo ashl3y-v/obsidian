@@ -195,7 +195,7 @@ void update_firmware()
 
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0) {
-            uart_write_str(UART1, "new flash");
+            uart_write_str(UART1, "New flash page.");
             if (!frame_length) {
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
@@ -215,7 +215,7 @@ void update_firmware()
                 return;
             }
             
-            uart_write_str(UART2, "Page successfully programmed\nAddress: ");
+            uart_write_str(UART2, "Page successfully programmed at address ");
             uart_write_hex(UART2, page_addr);
             uart_write_str(UART2, "\nBytes: ");
             uart_write_hex(UART2, data_index);
@@ -229,7 +229,7 @@ void update_firmware()
             // If at end of firmware, go to main
             if (frame_length == 0) {
                 uart_write(UART1, OK);
-                uart_write_str(UART2, "end of the firm");
+                uart_write_str(UART2, "End of firmware reached.");
                 break;
             }
         } 
