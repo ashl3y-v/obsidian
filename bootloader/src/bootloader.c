@@ -121,8 +121,7 @@ metadata load_metadata() {
     metadata mdata = {0};
 
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.signature), SIGNATURE_SIZE);
-    uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
-
+    
     char buffer[5];
     uart_read_wrp(UART1, BLOCKING, &read, &(mdata.version), sizeof(uint16_t));
     itoa(mdata.version, buffer, 10);
@@ -166,10 +165,10 @@ void update_firmware() {
     br_sha256_init(&sha256);
 
     metadata mdata = load_metadata();
-    if (mdata.size == 0) {
+    /*if (mdata.size == 0) {
         uart_write_str(UART2, "Something went wrong trying to load the metadata; restarting device\n");
         SysCtlReset();
-    }
+    }*/
 
     // Update our SHA256 hash with our current metadata
     br_sha256_update(&sha256, &mdata.version, sizeof(uint16_t));
