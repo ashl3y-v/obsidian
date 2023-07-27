@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define SIGNATURE_SIZE 32
+#define SIGNATURE_SIZE 64
 
 typedef struct _metadata
 {
