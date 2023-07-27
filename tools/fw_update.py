@@ -75,11 +75,9 @@ def send_metadata(ser, metadata, debug=False):
     time.sleep(0.2)
 
     # Version
-
     b_version = ser.read(2)
 
-    # Versioning check
-
+    ## Version check
     if b_version == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
 
@@ -88,8 +86,8 @@ def send_metadata(ser, metadata, debug=False):
 
     time.sleep(0.2)
 
-    # Version size
 
+    # Version size
     b_size = bytes([])
     while len(b_size) != 2:
         b_size = ser.read(HEADER)
@@ -99,8 +97,8 @@ def send_metadata(ser, metadata, debug=False):
 
     time.sleep(0.2)
 
-    # Message length
 
+    # Message length
     b_mlength = bytes([])
     while len(b_mlength) != 2:
         b_mlength = ser.read(HEADER)
@@ -136,13 +134,16 @@ def send_firmware(ser, firmware, debug=False):
 
         send_frame(ser, frame, debug=debug)
 
-        print(f"Wrote frame {idx} ({len(frame)} bytes).")
+        if debug:
+            print(f"Wrote frame {idx} ({len(frame)} bytes).")
+            
         time.sleep(0.2)
 
     # Send a zero length payload to tell the bootlader to finish writing its page.
     ser.write(struct.pack(">H", 0x0000))
 
-    resp = ser.read(1)  # Wait for an OK from the bootloader
+    # Wait for an OK from the bootloader
+    resp = ser.read(1) 
     if resp != OK:
         raise RuntimeError(
             "ERROR: Bootloader responded to zero length frame with {}".format(
@@ -173,7 +174,7 @@ def send_frame(ser, frame, debug=False):
 
 
 def update(ser, infile, debug):
-    # Open serial port. Set baudrate to 115200. Set timeout to 2 seconds.
+    # Read firmware blob
     with open(infile, "rb") as fp:
         firmware_blob = fp.read()
 
@@ -181,10 +182,11 @@ def update(ser, infile, debug):
 
     print("Connected!")
     time.sleep(3)
-
     print("UPDATE:")
     ser.write(UPDATE)
     print("\tPacket sent!")
+    
+    # Wait for an OK from the bootloader
     while response != OK:
         response = ser.read(HEADER)
 
@@ -202,7 +204,8 @@ def update(ser, infile, debug):
 
     print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
-
+    
+    # Check for integrity compromise using SHA hash
     hasherd = SHA256.new(metadata)
     print("metadata only sha256 signature: ", hasherd.hexdigest())
     print("entire file signature sha256: ", hasher.hexdigest())
@@ -213,7 +216,8 @@ def update(ser, infile, debug):
     except ValueError:
         raise RuntimeError("Invalid signature, aborting.")
 
-    ## Proceed to sending data.
+    
+    # Proceed to sending data.
 
     # Send metadata
     print("\tSending metadata!")
@@ -235,20 +239,8 @@ def update(ser, infile, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Firmware Update Tool")
 
-    parser.add_argument(
-        "--port",
-        help="Does nothing, included to adhere to command examples in rule doc",
-        required=False,
-    )
-    parser.add_argument(
-        "--firmware",
-        help="Path to firmware image to load.",
-        required=False,
-        default="../firmware/gcc/main.bin",
-    )
-    parser.add_argument(
-        "--debug", help="Enable debugging messages.", action="store_true"
-    )
+    parser.add_argument("--firmware", help="Path to firmware image to load.", required=False, default="../firmware/gcc/main.bin",)
+    parser.add_argument("--debug", help="Enable debugging messages.", action="store_true", default=False)
 
     args = parser.parse_args()
 
