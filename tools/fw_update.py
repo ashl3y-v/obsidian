@@ -221,7 +221,7 @@ def update(ser, infile, debug):
     print("\tSending metadata!")
     send_metadata(ser, metadata, debug=debug)
 
-    
+    print("\tSending firmware!")
     send_firmware(ser, firmware, debug=debug)
 
 
