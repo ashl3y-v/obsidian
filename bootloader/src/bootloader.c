@@ -103,6 +103,7 @@ int main(void) {
 
         case BOOT:
             uart_write_str(UART2, "Received a request to boot firmware.\n");
+            boot_firmware();
             break;
         }
     }
@@ -173,6 +174,10 @@ metadata load_metadata() {
         reject();
     }
 
+    //*fw_version = mdata.version;
+    //*fw_size_address = mdata.size;
+    //*fw_release_message_address = mdata.message_size;
+
     uart_write_str(UART2, "[METADATA] Loaded metadata succesfully\n");
     return mdata;
 }
@@ -235,58 +240,25 @@ void update_firmware() {
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
+        // I kept this in here just in case but in hindsight this will never
+        // be reached because we increment 256 bytes at a time
+        if (!frame_length) {
+            uart_write(UART1, OK);
+            uart_write_str(UART2, "End of firmware reached.");
+            break;
+        }
+
         // Update the current SHA256 hash with the data we just received
         uart_read_wrp(UART1, BLOCKING, &read, data + data_index, frame_length);
         br_sha256_update(&sha256, data + data_index, frame_length);
         data_index += frame_length;
 
-        // memcpy(firmware + data_index, &(data[data_index]), frame_length);
-
-        // If we filed our page buffer, program it
-        // this code never actually executes btw lol
-        if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
-
-            uart_write_str(UART2, "New flash page.");
-            if (!frame_length) {
-                uart_write_str(UART2, "Got zero length frame.\n");
-            }
-
-            // Try to write flash and check for error
-            if (program_flash(page_addr, data, data_index)) {
-                uart_write(UART1, ERROR);
-                SysCtlReset(); // goodbye device kek
-                return;
-            }
-
-            // Verify flash program
-            if (memcmp(data, (void*)page_addr, data_index) != 0) {
-                uart_write_str(UART2, "Flash check failed, aborting.\n");
-                uart_write(UART1, ERROR);
-                SysCtlReset(); // goodbye device kek
-                return;
-            }
-
-            uart_write_str(UART2, "Page successfully programmed at address ");
-            uart_write_hex(UART2, page_addr);
-            uart_write_str(UART2, "\nBytes: ");
-            uart_write_hex(UART2, data_index);
-            nl(UART2);
-
-            // Update to next page
-            page_addr += FLASH_PAGESIZE;
-            data_index = 0;
-        }
+        memcpy(firmware + data_index, data + data_index, frame_length);
 
         // Let fw_update.py know that we've received the packet and processed it
         uart_write(UART1, OK);
-
-        // If it ran out
-        if (frame_length == 0) {
-            uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.");
-            break;
-        }
     }
+    uart_write(UART1, OK);
     br_sha256_out(&sha256, hash);
 
     uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
@@ -299,9 +271,24 @@ void update_firmware() {
     else
         uart_write_str(UART2, "[VERIFICATION] ECC Verification Failed\n");
 
+        
+
+   
+
+    /*
+    char data[16] = {0xbc, 0xd9, 0x9c, 0x26, 0x31, 0x9d, 0x95, 0x1e, 0xbf, 0x4,0x21};
+    uart_write_hex_bytes(UART2, data, 16);
+    br_gcm_reset(&gc, nonce, 12);
+    br_gcm_flip(&gc);
+    br_gcm_run(&gc, 0, data, sizeof(data));
+    uart_write_hex_bytes(UART2, data, 16);   
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
+    */
+
+    
 }
+
 
 void load_initial_firmware(void) {
 
