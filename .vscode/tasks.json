@@ -70,6 +70,15 @@
             "problemMatcher": []
         },
         {
+            "label": "UART1",
+            "type": "shell",
+            "command": "python ./tools/uart.py 1",
+            "presentation": {
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "UART2",
             "type": "shell",
             "command": "python ./tools/uart.py 2",
