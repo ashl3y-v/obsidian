@@ -33,7 +33,7 @@ def copy_initial_firmware(binary_path):
     try:
         shutil.copy(binary_path, BOOTLOADER_DIR / "src/firmware.bin")
     except Exception as excep:
-        print(f"{excep}")
+        # print(f"{excep}")
         exit(FIRMWARE_ERROR)
 
 
@@ -48,11 +48,11 @@ def make_bootloader(**keys) -> bool:
     command = "make "
     variables = [f"{x}='{arrayize(y)}'" for x, y in keys.items()]
     for variable in variables:
-        print(variable)
+        # print(variable)
         command += variable + " "
 
     # Error checking
-    print(f"command: \n\t{command}")
+    # print(f"command: \n\t{command}")
 
     call("make clean", shell=True)
     status = call(command, shell=True)
@@ -130,15 +130,14 @@ def generate_secrets():
 
     # No point of trying to compile if we don't have any secrets
     except Exception as excep:
-        print(f"ERROR: Error while attempting to generate build secrets.\n{excep}")
+        print(f"Error while attempting to generate build secrets.\n{excep}")
         exit(SECRET_ERROR)
     
-
 
 def main(args):
     # Build and use default firmware if none is provided,
     # otherwise look for the binary at the path specified
-    print("args: ", args.initial_firmware)
+    # print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
         binary_path = FIRMWARE_DIR / "gcc" / "main.bin"
         os.chdir(FIRMWARE_DIR)
