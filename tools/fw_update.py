@@ -74,16 +74,13 @@ def send_metadata(ser, metadata, debug=False):
     
     sleep(0.2)
     
-    
     # Version
     
-    b_version = bytes([])
-    while len(b_version) != 2:
-        b_version = ser.read(HEADER)
-        
+    b_version = ser.read(2)
+    
     # Versioning check
     
-    if b_version[0] == ERROR:
+    if b_version == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
     
     b_version = int(struct.unpack("<H", b_version)[0])
