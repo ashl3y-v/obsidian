@@ -193,23 +193,6 @@ void update_firmware() {
     br_sha256_init(&sha256);
     uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
 
-    // initialize aes gcm context (broken)
-    // idk if these initializations are right
-    // context needs to have private key in it, how?
-    br_gcm_context ctx = {0};
-
-    const br_block_ctr_class* bctx = {0};
-
-    br_ghash gh = {0};
-
-    // hangs
-    br_gcm_init(&ctx, &bctx, gh);
-
-    int encrypt = 0;
-
-    // we need to run this on each block, possible?
-    // br_gcm_run(&ctx, encrypt, (void*)data, strlen(data));
-
     // Update our SHA256 hash with our current metadata
     br_sha256_update(&sha256, &mdata.version, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
