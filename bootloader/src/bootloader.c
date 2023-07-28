@@ -198,14 +198,6 @@ void update_firmware() {
     br_sha256_update(&sha256, &mdata.size, sizeof(uint16_t));
     br_sha256_update(&sha256, &mdata.message_size, sizeof(uint16_t));
 
-    // Initialize aes gcm
-    br_aes_ct_ctr_keys bc;
-    br_gcm_context gc;
-    br_aes_ct_ctr_init(&bc, key, 32);
-    br_gcm_init(&gc, &bc.vtable, br_ghash_ctmul32);
-    br_gcm_reset(&gc, iv, 16);
-    br_gcm_flip(&gc);
-
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
 
@@ -252,7 +244,6 @@ void update_firmware() {
 
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
-            br_gcm_run(&gc, 0, data, ct_len);
 
             uart_write_str(UART1, "New flash page.");
             if (!frame_length) {
