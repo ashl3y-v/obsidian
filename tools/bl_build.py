@@ -53,8 +53,7 @@ def make_bootloader(**keys) -> bool:
 
     # Error checking
     # print(f"command: \n\t{command}")
-    
-    
+
     # Call the make command
     call("make clean", shell=True)
     status = call(command, shell=True)
@@ -93,7 +92,7 @@ def generate_secrets():
         # Lastly, store our IV
         with open(CRYPTO_DIR / "iv.txt", mode="wb") as file:
             file.write(iv)
-            
+
         # Write to the secrets file
         # Temporary (but ugly) fix because Makefile command line constants are not working
         with open(CRYPTO_DIR / "secrets.h", mode="wb") as file:
@@ -114,15 +113,11 @@ def generate_secrets():
             file.write(
                 f"const uint8_t AES_KEY[AES_KEY_LENGTH] = {arrayize(aes)};\n".encode()
             )
-            file.write(
-                f"const uint8_t IV_KEY[IV_KEY_LENGTH] = {arrayize(iv)};\n".encode()
-            )
+            file.write(f"uint8_t IV_KEY[IV_KEY_LENGTH] = {arrayize(iv)};\n".encode())
             file.write(
                 f"const uint8_t ECC_PUBLIC_KEY[ECC_KEY_LENGTH] = {arrayize(exported_public)};\n".encode()
             )
-            file.write(
-                b"const br_ec_public_key EC_PUBLIC = {\n"
-            )
+            file.write(b"const br_ec_public_key EC_PUBLIC = {\n")
             file.write(b"\t.curve = BR_EC_secp256r1,\n")
             file.write(b"\t.q = (void*)(ECC_PUBLIC_KEY),\n")
             file.write(b"\t.qlen = sizeof(ECC_PUBLIC_KEY)\n};")
@@ -134,7 +129,7 @@ def generate_secrets():
     except Exception as excep:
         print(f"Error while attempting to generate build secrets.\n{excep}")
         exit(SECRET_ERROR)
-    
+
 
 def main(args):
     # Build and use default firmware if none is provided,
@@ -159,10 +154,10 @@ def main(args):
 
     # Set up secrets
     secrets = generate_secrets()
-    
+
     # Move the initial firmware
     copy_initial_firmware(binary_path)
-    
+
     # Run make commands
     make_bootloader(**secrets)
 

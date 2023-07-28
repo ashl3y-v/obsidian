@@ -62,7 +62,6 @@ unsigned char data[FLASH_PAGESIZE];
 void update_firmware();
 metadata load_metadata();
 
-
 // Setup the bootloader for communication
 void init_interfaces() {
 
@@ -181,9 +180,6 @@ metadata load_metadata() {
 }
 
 void update_firmware() {
-
-   
-
     // We don't want to proceed if we have no metadata...
     metadata mdata = load_metadata();
     if (!mdata.size) {
@@ -229,19 +225,28 @@ void update_firmware() {
     uint32_t page_addr = FW_BASE;
 
     // Set up decryption stuff
+    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
+    br_aes_gen_cbcdec_keys v_dc;
+    const br_block_cbcdec_class** dc;
+
+    dc = &v_dc.vtable;
+    vd->init(dc, AES_KEY, AES_KEY_LENGTH);
 
     // Iterate over the size of the firmware
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
-
         // Chunks should be 256 bytes or less
         uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
         // Update the current SHA256 hash with the data we just received
-        uart_read_wrp(UART1, BLOCKING, &read, firmware + data_index, frame_length);
+        uart_read_wrp(UART1, BLOCKING, &read, firmware + data_index,
+                      frame_length);
         br_sha256_update(&sha256, firmware + data_index, frame_length);
         data_index += frame_length;
+
+        // decrypt (put wherever)
+        // vd->run(dc, IV_KEY, data, data_length);
 
         // memcpy(firmware + data_index, &(data[data_index]), frame_length);
 
