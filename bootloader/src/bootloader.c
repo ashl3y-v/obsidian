@@ -243,7 +243,7 @@ void update_firmware() {
         // memcpy(firmware + data_index, &(data[data_index]), frame_length);
 
         // If we filed our page buffer, program it
-<<<<<<< HEAD
+        // this code never actually executes btw lol
         if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
 
             uart_write_str(UART2, "New flash page.");
@@ -301,52 +301,6 @@ void update_firmware() {
 
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");
-<<<<<<< HEAD
-=======
-    */
-
-    
-}
-
-/*
-int main(void) {
-    // A 'reset' on UART0 will re-start this code at the top of main, won't
-    // clear flash, but will clean ram.
-
-    // Initialize UART channels
-    // 0: Reset
-    // 1: Host Connection
-    // 2: Debug
-    uart_init(UART0);
-    uart_init(UART1);
-    uart_init(UART2);
-
-    // Enable UART0 interrupt
-    IntEnable(INT_UART0);
-    IntMasterEnable();
-
-    load_initial_firmware(); // note the short-circuit behavior in this
-                             // function, it doesn't finish running on reset!
-
-    uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
-    uart_write_str(UART2,
-                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
-    uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
-
-    int resp;
-    while (1) {
-        uint32_t instruction = uart_read(UART1, BLOCKING, &resp);
-        if (instruction == UPDATE) {
-            uart_write_str(UART1, "U");
-            load_firmware();
-            uart_write_str(UART2, "Loaded new firmware.\n");
-            nl(UART2);
-        } else if (instruction == BOOT) {
-            uart_write_str(UART1, "B");
-            boot_firmware();
-        }
-    }
->>>>>>> firmware actually writes to flash now
 }
 
 void load_initial_firmware(void) {
