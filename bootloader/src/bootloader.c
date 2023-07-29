@@ -224,14 +224,6 @@ void update_firmware() {
     uint32_t data_index = 0;
     uint32_t page_addr = FW_BASE;
 
-    // Set up decryption stuff
-    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
-    br_aes_gen_cbcdec_keys v_dc;
-    const br_block_cbcdec_class** dc;
-
-    dc = &v_dc.vtable;
-    vd->init(dc, AES_KEY, AES_KEY_LENGTH);
-
     // Iterate over the size of the firmware
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
         // Chunks should be 256 bytes or less
