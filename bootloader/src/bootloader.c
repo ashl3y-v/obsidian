@@ -134,7 +134,7 @@ metadata load_metadata() {
     uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata.message_size),
                   sizeof(uint16_t));
 
-    uart_write_str(UART2, "[META] File Signature: ");
+    uart_write_str(UART2, "[META] ECC File Signature: ");
     uart_write_hex_bytes(UART2, mdata.signature, SIGNATURE_SIZE);
     nl(UART2);
 
@@ -181,9 +181,6 @@ metadata load_metadata() {
 }
 
 void update_firmware() {
-
-   
-
     // We don't want to proceed if we have no metadata...
     metadata mdata = load_metadata();
     if (!mdata.size) {
@@ -302,6 +299,20 @@ void update_firmware() {
         uart_write_str(UART2, "[VERIFICATION] ECC Verification Passed\n");
     else
         uart_write_str(UART2, "[VERIFICATION] ECC Verification Failed\n");
+
+    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
+    br_aes_gen_cbcdec_keys v_dc;
+    const br_block_cbcdec_class **dc;
+
+    dc = &v_dc.vtable;
+    vd->init(dc, AES_KEY, AES_KEY_LENGTH);
+    for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
+        vd->run(dc, IV_KEY, firmware + idx, FRAME_SIZE);
+        
+        // add writing to flash
+
+        uart_write_hex_bytes(UART2, firmware + idx, FRAME_SIZE);
+    }
 
     uart_write(UART1, OK);
     uart_write_str(UART2, "Finished writing firmware.\n");

@@ -32,7 +32,7 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
         byte_str[2] = '\0';
 
         uart_write_str(uart, byte_str);
-        // uart_write_str(uart, " "); uncomment if you want space between your bytes
+        uart_write_str(uart, " "); // uncomment if you want space between your bytes
     }
 }
 
