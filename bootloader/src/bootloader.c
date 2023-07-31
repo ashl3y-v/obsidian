@@ -231,6 +231,14 @@ void update_firmware() {
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
+
+        // Make sure we are't reading more than our frame size
+        if (frame_length > FRAME_SIZE)
+        {
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
+            reject();
+        }
+        
         // Update the current SHA256 hash with the data we just received
         uart_read_wrp(UART1, BLOCKING, &read, firmware + data_index,
                       frame_length);
