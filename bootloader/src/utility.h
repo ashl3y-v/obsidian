@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "uart.h"
 #include "inc/hw_types.h" 
