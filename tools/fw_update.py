@@ -65,46 +65,40 @@ def send_metadata(ser, metadata, debug=False):
     print("\tMETA packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.2)
-
     print("\tPacket accepted by bootloader!")
+    
+    # Send metadata
     ser.write(metadata)
-
     print("\tSending metadata!")
-    print("\tAwaiting response...")
-
     time.sleep(0.2)
 
     # Version
     b_version = ser.read(2)
-
     ## Version check
     if b_version == ERROR:
         raise RuntimeError("Invalid version request, aborting.")
-
+    # Version (cont.)
     b_version = int(struct.unpack("<H", b_version)[0])
-    print(f"\tVersion echoed by bootloader: {b_version}")
-
+    if debug:
+        print(f"\tVersion echoed by bootloader: {b_version}")
     time.sleep(0.2)
-
 
     # Version size
     b_size = bytes([])
     while len(b_size) != 2:
         b_size = ser.read(HEADER)
-
     b_size = int(struct.unpack("<H", b_size)[0])
-    print(f"\tVersion size echoed by bootloader: {b_size}")
-
+    if debug:
+        print(f"\tVersion size echoed by bootloader: {b_size}")
     time.sleep(0.2)
-
 
     # Message length
     b_mlength = bytes([])
     while len(b_mlength) != 2:
         b_mlength = ser.read(HEADER)
-
     b_mlength = int(struct.unpack("<H", b_mlength)[0])
-    print(f"\tMessage length echoed by bootloader: {b_mlength}")
+    if debug:
+        print(f"\tMessage length echoed by bootloader: {b_mlength}")
 
     return True
 
@@ -119,7 +113,6 @@ def send_firmware(ser, firmware, debug=False):
     while ser.read(HEADER) != OK:
         time.sleep(0.5)
 
-    print("\tPacket accepted by bootloader!")
     print("\tSending firmware!")
 
     # Send firmware in frames
@@ -141,7 +134,7 @@ def send_firmware(ser, firmware, debug=False):
             
         time.sleep(0.2)
 
-    # Send a zero length payload to tell the bootlader to finish writing its page.
+    # Send a zero frame
     ser.write(struct.pack(">H", 0x0000))
 
     # Wait for an OK from the bootloader
@@ -157,18 +150,15 @@ def send_firmware(ser, firmware, debug=False):
 
 
 def send_frame(ser, frame, debug=False):
+    # Write the frame
     ser.write(frame)
-
     if debug:
         print_hex(frame)
 
     # Wait for an OK from the bootloader
     time.sleep(0.4)
-
     resp = ser.read(1)
-
     time.sleep(0.2)
-
     if resp != OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
     if debug:
@@ -176,37 +166,38 @@ def send_frame(ser, frame, debug=False):
 
 
 def update(ser, infile, debug):
+    response = None
+        
     # Read firmware blob
     with open(infile, "rb") as fp:
         firmware_blob = fp.read()
-
-    response = None
 
     print("Connected!")
     time.sleep(3)
     print("UPDATE:")
     ser.write(UPDATE)
-    print("\tPacket sent!")
+    if debug:
+        print("\tPacket sent!")
     
     # Wait for an OK from the bootloader
     while response != OK:
         response = ser.read(HEADER)
-
-    print("\tPacket accepted by bootloader!")
+    if debug:
+        print("\tPacket accepted by bootloader!")
 
     # Parse firmware blob
     signature = firmware_blob[0:64]
     metadata = firmware_blob[64:70]
     firmware = firmware_blob[70:]
 
-
     # Check for integrity compromise using SHA hash
-    print("\tVerifying firmware data!")
+    if debug:
+        print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
     hasherd = SHA256.new(metadata)
-    #if debug:
-    print("Metadata-only SHA256 hash: ", hasherd.hexdigest())
-    print("Complete SHA256 hash: ", hasher.hexdigest())
+    if debug:
+        print("Metadata-only SHA256 hash: ", hasherd.hexdigest())
+        print("Complete SHA256 hash: ", hasher.hexdigest())
     
     # Check for integrity compromise using ECC public key signature
     key = None
@@ -227,11 +218,11 @@ def update(ser, infile, debug):
 
     # Send firmware
     send_firmware(ser, firmware, debug=debug)
-    print("Done writing firmware.")
+    print("\tDone writing firmware.")
 
     # Want to boot?
     while 1:
-        boot_q = str(input("Enter B to boot the firmware. ")).strip()
+        boot_q = str(input("Enter B to boot. ")).strip()
         if boot_q == "B":
             break
     ser.write(BOOT)
