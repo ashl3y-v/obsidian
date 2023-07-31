@@ -417,7 +417,6 @@ void boot_firmware(void) {
     uint16_t fw_size = *fw_size_address;
     fw_release_message_address = (uint8_t*)(FW_BASE + fw_size);
     uart_write_str(UART2, (char*)fw_release_message_address);
-    uart_write_str(UART2, "\nඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞ");
 
     // Boot the firmware
     __asm("LDR R0,=0x10001\n\t"
