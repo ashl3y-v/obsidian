@@ -34,7 +34,7 @@
         {
             "label": "Protect",
             "type": "shell",
-            "command": "python ./tools/fw_protect.py --infile ./firmware/gcc/main.bin --version 2 --message \"amogus\" --outfile ./firmware/gcc/protected_firmware.bin",
+            "command": "python ./tools/fw_protect.py --infile ./firmware/gcc/main.bin --version 2 --message \"among\" --outfile ./firmware/gcc/protected_firmware.bin",
             "group": "build",
             "presentation": {
                 "panel": "dedicated"
