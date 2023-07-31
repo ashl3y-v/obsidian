@@ -12,8 +12,8 @@
 // Library Imports
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Application Imports
@@ -64,7 +64,6 @@ unsigned char firmware[MAX_FIRMWARE_SIZE];
 
 // Setup the bootloader for communication
 void init_interfaces() {
-
     // The interrupt handler listens to UART0 for RESET interrupts
     uart_init(UART0);
     IntEnable(INT_UART0);
@@ -110,7 +109,6 @@ int main(void) {
 }
 
 void load_metadata(metadata* mdata) {
-
     // Wait until we receive a metadata header
     int read;
     while (true) {
@@ -125,9 +123,12 @@ void load_metadata(metadata* mdata) {
 
     // Start reading in information about our metadata
     uart_read_wrp(UART1, BLOCKING, &read, mdata->signature, SIGNATURE_SIZE);
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->version), sizeof(uint16_t));
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->size), sizeof(uint16_t));
-    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->message_size), sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->version),
+                  sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->size),
+                  sizeof(uint16_t));
+    uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->message_size),
+                  sizeof(uint16_t));
 
     // Debug information (remove before release)
     uart_write_str(UART2, "[META] ECC File Signature: ");
@@ -153,7 +154,6 @@ void load_metadata(metadata* mdata) {
     uart_write_str(UART2, buffer);
     uart_write_wrp(UART1, (uint8_t*)(&mdata->message_size), sizeof(uint16_t));
     nl(UART2);
-    
 
     // Prevent rollbacks except for debug binaries
     uint16_t old_version = *fw_version_address;
@@ -228,12 +228,11 @@ void load_firmware() {
         uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
-        
 
-        // Frames must be 256 bytes or less
-        if (frame_length > FRAME_SIZE)
-        {
-            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
+        // Make sure we are't reading more than our frame size
+        if (frame_length > FRAME_SIZE) {
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to "
+                                  "read firmware data.\n");
             reject();
         }
 
@@ -260,7 +259,7 @@ void load_firmware() {
     nl(UART2);
 
     bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
-                              &mdata.signature, SIGNATURE_SIZE);
+                                        &mdata.signature, SIGNATURE_SIZE);
     if (!status)
         reject();
 
@@ -271,9 +270,7 @@ void load_firmware() {
     uart_write_str(UART2, "[FIRMWARE] Ready to boot!\n");
 }
 
-
-void decrypt_firmware(metadata* mdata)
-{
+void decrypt_firmware(metadata* mdata) {
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
     const br_block_cbcdec_class** dc;
@@ -336,14 +333,9 @@ void decrypt_firmware(metadata* mdata)
         uart_write_hex(UART2, remainder);
         nl(UART2);
     }
-
-        
-    
- 
 }
 
 void load_initial_firmware(void) {
-
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
 
         return;
