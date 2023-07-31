@@ -21,9 +21,9 @@ CRYPTO_DIR = (
 
 # max size of unsigned short
 MAX_VERSION = 2**16 - 1
-# from challenge outline document (rounded up a bit)
-MAX_MESSAGE_SIZE = 1024
-MAX_FIRMWARE_SIZE = 32768
+# from challenge outline document
+MAX_MESSAGE_SIZE = 1000
+MAX_FIRMWARE_SIZE = 30000
 
 # AES-256 key length
 AES_KEY_LEN = 32
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         infile=args.infile,
         outfile=args.outfile,
         version=int(args.version),
-        message="ඞඞඞඞඞඞඞඞඞඞ  " + args.message + "  ඞඞඞඞඞඞඞඞඞඞ"
+        message="ඞඞඞඞඞඞඞඞඞඞ  " + args.message + "  ඞඞඞඞඞඞඞඞඞඞ",
     )
 
 # sus impoter
