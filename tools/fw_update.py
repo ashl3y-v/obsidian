@@ -54,7 +54,7 @@ def send_metadata(ser, metadata, debug=False):
     print("METADATA:")
     # Parse version information
     version, size = struct.unpack("<HH", metadata[64:68])
-    print(f"\tVersion: {version}\n\tSize: {size} bytes\n")
+    print(f"\tVersion: {version}\n\tSize: {size} bytes")
 
     # Prevent debug abuse
     if version == 0 and not debug:
@@ -62,10 +62,12 @@ def send_metadata(ser, metadata, debug=False):
 
     # Handshake with bootloader to send metadata
     ser.write(META)
-    print("\tMETA packet sent!")
+    if debug: 
+        print("\tMETA packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.2)
-    print("\tPacket accepted by bootloader!")
+    if debug:
+        print("\tPacket accepted by bootloader!")
     
     # Send metadata
     ser.write(metadata)
@@ -109,9 +111,12 @@ def send_firmware(ser, firmware, debug=False):
     time.sleep(1)
     ser.write(CHUNK)
 
-    print("\tCHUNK packet sent!")
+    if debug:
+        print("\tCHUNK packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.5)
+    if debug:
+        print("\tPacket accepted by bootloader!")
 
     print("\tSending firmware!")
 

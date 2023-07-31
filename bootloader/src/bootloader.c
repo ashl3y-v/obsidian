@@ -118,7 +118,7 @@ void load_metadata(metadata* mdata) {
     }
 
     // Acknowledge that we are about to receive metadata
-    uart_write_str(UART2, "[META] Received packet\n");
+    uart_write_str(UART2, "[METADATA] META packet received\n");
     uart_write(UART1, OK);
 
     // Start reading in information about our metadata
@@ -131,11 +131,11 @@ void load_metadata(metadata* mdata) {
                   sizeof(uint16_t));
 
     // Debug information (remove before release)
-    uart_write_str(UART2, "[META] ECC File Signature: ");
-    uart_write_hex_bytes(UART2, mdata->signature, SIGNATURE_SIZE);
-    nl(UART2);
+    //uart_write_str(UART2, "[METADATA] ECC signature: ");
+    //uart_write_hex_bytes(UART2, mdata->signature, SIGNATURE_SIZE);
+    //nl(UART2);
 
-    uart_write_str(UART2, "[META] Version: ");
+    uart_write_str(UART2, "[METADATA] Version: ");
 
     char buffer[5];
     itoa(mdata->version, buffer, 10);
@@ -143,13 +143,13 @@ void load_metadata(metadata* mdata) {
     uart_write_wrp(UART1, (uint8_t*)(&mdata->version), sizeof(uint16_t));
     nl(UART2);
 
-    uart_write_str(UART2, "[META] Size: ");
+    uart_write_str(UART2, "[METADATA] Size: ");
     itoa(mdata->size, buffer, 10);
     uart_write_str(UART2, buffer);
     uart_write_wrp(UART1, (uint8_t*)(&mdata->size), sizeof(uint16_t));
     nl(UART2);
 
-    uart_write_str(UART2, "[META] Message Size: ");
+    uart_write_str(UART2, "[METADATA] Message size: ");
     itoa(mdata->message_size, buffer, 10);
     uart_write_str(UART2, buffer);
     uart_write_wrp(UART1, (uint8_t*)(&mdata->message_size), sizeof(uint16_t));
@@ -194,7 +194,7 @@ void load_firmware() {
     // An initalized context is needed for hash functions
     br_sha256_context sha256 = {0};
     br_sha256_init(&sha256);
-    uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
+    //uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
 
     // Update our SHA256 hash with our current metadata
     br_sha256_update(&sha256, &mdata.version, sizeof(uint16_t));
@@ -204,9 +204,9 @@ void load_firmware() {
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
 
-    uart_write_str(UART2, "[FIRMWARE] SHA256 of metadata: ");
-    uart_write_hex_bytes(UART2, hash, 32);
-    nl(UART2);
+    //uart_write_str(UART2, "[FIRMWARE] SHA256 of metadata: ");
+    //uart_write_hex_bytes(UART2, hash, 32);
+    //nl(UART2);
 
     // Wait for firmware header to be sent
     int read;
@@ -225,21 +225,20 @@ void load_firmware() {
     uint32_t data_index = 0;
     while (true)
     {
-        uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
+        uart_write_str(UART2, "[FIRMWARE] Waiting for new frame.\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
         // Make sure we are't reading more than our frame size
         if (frame_length > FRAME_SIZE) {
-            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to "
-                                  "read firmware data.\n");
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
             reject();
         }
 
         // We aren't reading anymore data
         if (!frame_length) {
             uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.");
+            uart_write_str(UART2, "End of firmware reached.\n");
             break;
         }
 
@@ -254,16 +253,16 @@ void load_firmware() {
 
     // more debug output
     br_sha256_out(&sha256, hash);
-    uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
-    uart_write_hex_bytes(UART2, hash, 32);
-    nl(UART2);
+    //uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
+    //uart_write_hex_bytes(UART2, hash, 32);
+    //nl(UART2);
 
     bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
                                         &mdata.signature, SIGNATURE_SIZE);
     if (!status)
         reject();
 
-    uart_write_str(UART2, "[FIRMWARE] Updating firmware...\n");
+    uart_write_str(UART2, "[FIRMWARE] Updating firmware ...\n");
     decrypt_firmware(&mdata);
 
     uart_write(UART1, OK);
@@ -282,21 +281,16 @@ void decrypt_firmware(metadata* mdata) {
     size_t remainder = mdata->size % FLASH_PAGESIZE;
     uint32_t page = FW_BASE;
 
-    
-
     // Copy full chunks
     for (size_t i = 0; i < chunks; i++, page += FLASH_PAGESIZE) {
         vd->run(dc, IV_KEY, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
         if (program_flash(page, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE))
             reject();
 
-
         if (memcmp(firmware + (i * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
             reject();
 
-
-        uart_write_hex_bytes(UART2, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
-
+        //uart_write_hex_bytes(UART2, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
         uart_write_str(UART2, "Page successfully programmed\nAddress: ");
         uart_write_hex(UART2, page);
         uart_write_str(UART2, "\nBytes: ");
@@ -304,29 +298,21 @@ void decrypt_firmware(metadata* mdata) {
         nl(UART2);
     }
 
-    uart_write_str(UART2, "1\n");
     // Copy remaining bytes
     if (remainder > 0) {
-        uart_write_str(UART2, "2\n");
         vd->run(dc, IV_KEY, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE);
-        uart_write_str(UART2, "decrypted\n");
-
-
-        uart_write_hex(UART2, page);
-        nl(UART2);
-        uart_write_hex(UART2, firmware + (chunks * FLASH_PAGESIZE));
-        nl(UART2);
+        //uart_write_str(UART2, "[FIRMWARE] Decryption successful.\n");
+        //uart_write_hex(UART2, page);
+        //nl(UART2);
+        //uart_write_hex(UART2, firmware + (chunks * FLASH_PAGESIZE));
+        //nl(UART2);
         if (program_flash(page, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE))
             reject();
-
-        uart_write_str(UART2, "3\n");
 
         if (memcmp(firmware + (chunks * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
             reject();
 
-        uart_write_str(UART2, "4\n");
-        uart_write_hex_bytes(UART2, firmware + chunks * FLASH_PAGESIZE, FLASH_PAGESIZE);
-
+        //uart_write_hex_bytes(UART2, firmware + chunks * FLASH_PAGESIZE, FLASH_PAGESIZE);
         uart_write_str(UART2, "Page successfully programmed\nAddress: ");
         uart_write_hex(UART2, page);
         uart_write_str(UART2, "\nBytes: ");
@@ -337,7 +323,6 @@ void decrypt_firmware(metadata* mdata) {
 
 void load_initial_firmware(void) {
     if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF) {
-
         return;
     }
 
