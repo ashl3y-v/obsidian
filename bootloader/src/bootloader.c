@@ -282,13 +282,13 @@ void decrypt_firmware(metadata* mdata)
 
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
-    const br_block_cbcdec_class **dc;
+    const br_block_cbcdec_class** dc;
 
     dc = &v_dc.vtable;
     vd->init(dc, AES_KEY, AES_KEY_LENGTH);
     for (int idx = 0; idx < mdata->size; idx += FRAME_SIZE) {
         vd->run(dc, IV_KEY, firmware + idx, FRAME_SIZE);
-        
+
         // add writing to flash
 
         uart_write_hex_bytes(UART2, firmware + idx, FRAME_SIZE);
