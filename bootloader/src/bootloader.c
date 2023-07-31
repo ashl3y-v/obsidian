@@ -240,13 +240,17 @@ void update_firmware() {
         // decrypt (put wherever)
         // vd->run(dc, IV_KEY, data, data_length);
 
-        // memcpy(firmware + data_index, &(data[data_index]), frame_length);
+        memcpy(firmware + data_index, &(data[data_index]), frame_length);
+
+        uart_write_str(UART2, "data index, frame_length: ");
+        uart_write_hex(UART2, data_index);
+        uart_write_str(UART2, ", ");
+        uart_write_hex(UART2, frame_length);
+        nl(UART2);
 
         // If we filed our page buffer, program it
-        /* this code never actually executes btw lol
-        if (data_index == FLASH_PAGESIZE - 1 || frame_length == 0) {
-
-            uart_write_str(UART2, "New flash page.");
+        if (data_index >= FLASH_PAGESIZE - 1 || frame_length < FRAME_SIZE) {
+            uart_write_str(UART2, "New flash page.\n");
             if (!frame_length) {
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
@@ -268,6 +272,7 @@ void update_firmware() {
 
             uart_write_str(UART2, "Page successfully programmed at address ");
             uart_write_hex(UART2, page_addr);
+            nl(UART2);
             uart_write_str(UART2, "\nBytes: ");
             uart_write_hex(UART2, data_index);
             nl(UART2);
@@ -276,7 +281,6 @@ void update_firmware() {
             page_addr += FLASH_PAGESIZE;
             data_index = 0;
         }
-        */
 
         // Let fw_update.py know that we've received the packet and processed it
         uart_write(UART1, OK);
@@ -302,13 +306,13 @@ void update_firmware() {
 
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
-    const br_block_cbcdec_class **dc;
+    const br_block_cbcdec_class** dc;
 
     dc = &v_dc.vtable;
     vd->init(dc, AES_KEY, AES_KEY_LENGTH);
     for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
         vd->run(dc, IV_KEY, firmware + idx, FRAME_SIZE);
-        
+
         // add writing to flash
 
         uart_write_hex_bytes(UART2, firmware + idx, FRAME_SIZE);
