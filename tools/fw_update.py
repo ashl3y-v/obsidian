@@ -132,7 +132,7 @@ def send_firmware(ser, firmware, debug=False):
         # Construct frame
         frame = struct.pack(f"H{len(data)}s", length, data)
 
-    
+        # Send frame
         time.sleep(0.5)
         send_frame(ser, frame, debug=debug)
 
@@ -200,7 +200,6 @@ def update(ser, infile, debug):
     firmware = firmware_blob[70:]
 
 
-
     # Check for integrity compromise using SHA hash
     print("\tVerifying firmware data!")
     hasher = SHA256.new(metadata + firmware)
@@ -224,11 +223,9 @@ def update(ser, infile, debug):
     # Proceed to sending data.
 
     # Send metadata
-    print("\tSending metadata!")
     send_metadata(ser, signature + metadata, debug=debug)
 
     # Send firmware
-    print("\tSending firmware!")
     send_firmware(ser, firmware, debug=debug)
     print("Done writing firmware.")
 
