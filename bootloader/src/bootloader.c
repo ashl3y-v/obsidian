@@ -333,7 +333,6 @@ void load_initial_firmware(void) {
     program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
 
     int i;
-
     for (i = 0; i < size / FLASH_PAGESIZE; i++) {
         program_flash(FW_BASE + (i * FLASH_PAGESIZE),
                       initial_data + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
@@ -345,8 +344,7 @@ void load_initial_firmware(void) {
         program_flash(FW_BASE + (i * FLASH_PAGESIZE), (uint8_t*)initial_msg,
                       msg_len);
     } else {
-        // Some firmware left. Determine how many bytes of release message can
-        // fit
+        // Some firmware left. Determine how many bytes of release message can fit
         if (msg_len > (FLASH_PAGESIZE - rem_fw_bytes)) {
             rem_msg_bytes = msg_len - (FLASH_PAGESIZE - rem_fw_bytes);
         } else {
@@ -419,6 +417,7 @@ void boot_firmware(void) {
     uint16_t fw_size = *fw_size_address;
     fw_release_message_address = (uint8_t*)(FW_BASE + fw_size);
     uart_write_str(UART2, (char*)fw_release_message_address);
+    uart_write_str(UART2, "ඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞ");
 
     // Boot the firmware
     __asm("LDR R0,=0x10001\n\t"

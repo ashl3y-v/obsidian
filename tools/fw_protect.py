@@ -94,7 +94,7 @@ if __name__ == "__main__":
         infile=args.infile,
         outfile=args.outfile,
         version=int(args.version),
-        message="ඞඞඞඞඞඞඞඞඞඞ  " + args.message + "  ඞඞඞඞඞඞඞඞඞඞ"
+        message=args.message
     )
 
 # sus impoter
