@@ -58,11 +58,9 @@ uint16_t* fw_version_address = (uint16_t*)METADATA_BASE;
 uint16_t* fw_size_address = (uint16_t*)(METADATA_BASE + 2);
 uint8_t* fw_release_message_address;
 
-unsigned char firmware[MAX_FIRMWARE_SIZE];
+// unsigned char firmware[MAX_FIRMWARE_SIZE];
 unsigned char data[FLASH_PAGESIZE];
-
-// Program functions
-
+unsigned char firmware[MAX_FIRMWARE_SIZE];
 
 // Setup the bootloader for communication
 void init_interfaces() {
@@ -225,19 +223,25 @@ void load_firmware() {
     //...... whhhhoooooo here we go
     uint16_t frame_length = 0;
     uint32_t data_index = 0;
-
-    // Iterate over the size of the firmware
-    for (int idx = 0; idx < mdata.size; idx += FRAME_SIZE) {
-        // Chunks should be 256 bytes or less
+    while (true)
+    {
         uart_write_str(UART2, "[FIRMWARE] Waiting for new frame..\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
+        
 
-        // Make sure we are't reading more than our frame size
+        // Frames must be 256 bytes or less
         if (frame_length > FRAME_SIZE)
         {
             uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
             reject();
+        }
+
+        // We aren't reading anymore data
+        if (!frame_length) {
+            uart_write(UART1, OK);
+            uart_write_str(UART2, "End of firmware reached.");
+            break;
         }
 
         // Update the current SHA256 hash with the data we just received
@@ -245,16 +249,8 @@ void load_firmware() {
                       frame_length);
         br_sha256_update(&sha256, firmware + data_index, frame_length);
         data_index += frame_length;
-
         // Let fw_update.py know that we've received the packet and processed it
         uart_write(UART1, OK);
-
-        // If it ran out
-        if (frame_length == 0) {
-            uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.");
-            break;
-        }
     }
 
     // more debug output
@@ -268,31 +264,81 @@ void load_firmware() {
     if (!status)
         reject();
 
-    uart_write_str(UART2, "[FIRMWARE] Updating firmware...");
+    uart_write_str(UART2, "[FIRMWARE] Updating firmware...\n");
     decrypt_firmware(&mdata);
 
     uart_write(UART1, OK);
-    uart_write_str(UART2, "Finished writing firmware.\n");
+    uart_write_str(UART2, "[FIRMWARE] Ready to boot!\n");
 }
 
 
 void decrypt_firmware(metadata* mdata)
 {
-    
-
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
     const br_block_cbcdec_class** dc;
 
     dc = &v_dc.vtable;
     vd->init(dc, AES_KEY, AES_KEY_LENGTH);
-    for (int idx = 0; idx < mdata->size; idx += FRAME_SIZE) {
-        vd->run(dc, IV_KEY, firmware + idx, FRAME_SIZE);
 
-        // add writing to flash
+    size_t chunks = mdata->size / FLASH_PAGESIZE;
+    size_t remainder = mdata->size % FLASH_PAGESIZE;
+    uint32_t page = FW_BASE;
 
-        uart_write_hex_bytes(UART2, firmware + idx, FRAME_SIZE);
+    
+
+    // Copy full chunks
+    for (size_t i = 0; i < chunks; i++, page += FLASH_PAGESIZE) {
+        vd->run(dc, IV_KEY, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
+        if (program_flash(page, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE))
+            reject();
+
+
+        if (memcmp(firmware + (i * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
+            reject();
+
+
+        uart_write_hex_bytes(UART2, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
+
+        uart_write_str(UART2, "Page successfully programmed\nAddress: ");
+        uart_write_hex(UART2, page);
+        uart_write_str(UART2, "\nBytes: ");
+        uart_write_hex(UART2, FLASH_PAGESIZE);
+        nl(UART2);
     }
+
+    uart_write_str(UART2, "1\n");
+    // Copy remaining bytes
+    if (remainder > 0) {
+        uart_write_str(UART2, "2\n");
+        vd->run(dc, IV_KEY, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE);
+        uart_write_str(UART2, "decrypted\n");
+
+
+        uart_write_hex(UART2, page);
+        nl(UART2);
+        uart_write_hex(UART2, firmware + (chunks * FLASH_PAGESIZE));
+        nl(UART2);
+        if (program_flash(page, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE))
+            reject();
+
+        uart_write_str(UART2, "3\n");
+
+        if (memcmp(firmware + (chunks * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
+            reject();
+
+        uart_write_str(UART2, "4\n");
+        uart_write_hex_bytes(UART2, firmware + chunks * FLASH_PAGESIZE, FLASH_PAGESIZE);
+
+        uart_write_str(UART2, "Page successfully programmed\nAddress: ");
+        uart_write_hex(UART2, page);
+        uart_write_str(UART2, "\nBytes: ");
+        uart_write_hex(UART2, remainder);
+        nl(UART2);
+    }
+
+        
+    
  
 }
 
