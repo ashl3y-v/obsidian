@@ -38,7 +38,7 @@ ERROR = b"E"
 UPDATE = b"U"
 BOOT = b"B"
 META = b"M"
-CHUNK = b"C"
+FIRM = b"C"
 DONE = b"D"
 
 
@@ -111,10 +111,10 @@ def send_firmware(ser, firmware, debug=False):
 
     # Handshake with bootloader to send firmware
     time.sleep(1)
-    ser.write(CHUNK)
+    ser.write(FIRM)
 
     if debug:
-        print("\tCHUNK packet sent!")
+        print("\tFIRM packet sent!")
     while ser.read(HEADER) != OK:
         time.sleep(0.5)
     if debug:

@@ -44,7 +44,7 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define UPDATE ((uint16_t)('U'))
 #define BOOT ((uint16_t)('B'))
 #define META ((uint16_t)('M'))
-#define CHUNK ((uint16_t)('C'))
+#define FIRM ((uint16_t)('C'))
 #define DONE ((uint16_t)('D'))
 #define FRAME_SIZE ((uint16_t)(256))
 
@@ -80,11 +80,11 @@ void init_interfaces() {
     load_initial_firmware();
 
     // Setup dialogue
-    uart_write_str(UART2, "Obsidian Update Interface\n");
+    uart_write_str(UART2, "Obsidian Bootloader Interface\n");
     uart_write_str(UART2,
-                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
+                   "Send \"U\" to update and \"B\" to run the firmware.\n");
     uart_write_str(UART2,
-                   "Writing 0x20 to UART0 (space) will reset the device\n");
+                   "Writing 0x20 to UART0 (space) will reset the device.\n");
     uart_write_str(UART2, " ");
 }
 
@@ -97,12 +97,12 @@ int main(void) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
         switch (request) {
         case UPDATE:
-            uart_write_str(UART2, "Received a request to update firmware.\n");
+            uart_write_str(UART2, "[UPDATE] Received a request to update firmware.\n");
             load_firmware();
             break;
 
         case BOOT:
-            uart_write_str(UART2, "Received a request to boot firmware.\n");
+            uart_write_str(UART2, "[BOOT] Received a request to boot firmware.\n");
             boot_firmware();
             break;
         }
@@ -206,12 +206,12 @@ void load_firmware() {
     int read;
     while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
-        if (request == CHUNK)
+        if (request == FIRM)
             break;
     }
 
     // Acknowledge that we are about to receive firmware
-    uart_write_str(UART2, "[FIRMWARE] CHUNK packet received\n");
+    uart_write_str(UART2, "[FIRMWARE] FIRM packet received\n");
     uart_write(UART1, OK);
 
     // begin receiving firmware
@@ -225,15 +225,14 @@ void load_firmware() {
 
         // Make sure we are't reading more than our frame size
         if (frame_length > FRAME_SIZE) {
-            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to "
-                                  "read firmware data.\n");
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
             reject();
         }
 
         // We aren't reading anymore data
         if (!frame_length) {
             uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.\n");
+            uart_write_str(UART2, "[FIRMWARE] End of firmware reached.\n");
             break;
         }
 
@@ -250,8 +249,7 @@ void load_firmware() {
     br_sha256_out(&sha256, hash);
 
     // verify the hash with ECDSA and public key
-    bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
-                                        &mdata.signature, SIGNATURE_SIZE);
+    bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC, &mdata.signature, SIGNATURE_SIZE);
 
     if (!status)
         reject();
@@ -291,7 +289,7 @@ void decrypt_and_write_firmware(metadata* mdata) {
                    FLASH_PAGESIZE) != 0)
             reject();
 
-        uart_write_str(UART2, "Page successfully programmed\n");
+        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
 
     // Copy remaining bytes
@@ -307,7 +305,7 @@ void decrypt_and_write_firmware(metadata* mdata) {
                    FLASH_PAGESIZE) != 0)
             reject();
 
-        uart_write_str(UART2, "Page successfully programmed\n");
+        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
 }
 
