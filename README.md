@@ -8,7 +8,7 @@ Make sure PyCryptodome is running the latest version as some of the cryptographi
 ```$ python -m pip install -U pycryptodome```
 
 ### Steps
-
+ ``[]`` indicates required arguments, ``<>`` indicates optional arguments.
  - Provide a firmware to be compiled with (optional) or automatically build the initial firmware with the bootloader.
 	``$ cd tools``
 	``$ python bl_build.py --initial-firmware <firmware>``
