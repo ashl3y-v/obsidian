@@ -85,7 +85,6 @@ void init_interfaces() {
                    "Send \"U\" to update and \"B\" to run the firmware.\n");
     uart_write_str(UART2,
                    "Writing 0x20 to UART0 (space) will reset the device.\n");
-    uart_write_str(UART2, " ");
 }
 
 int main(void) {
@@ -259,6 +258,8 @@ void load_firmware() {
         reject();
 
     uart_write_str(UART2, "[FIRMWARE] Updating firmware ...\n");
+
+    // no need to check the return type, the device will reset if this fails
     decrypt_and_write_firmware(&mdata);
 
     uart_write(UART1, OK);
@@ -279,6 +280,9 @@ void decrypt_and_write_firmware(metadata* mdata) {
     size_t remainder = mdata->size % FLASH_PAGESIZE;
     uint32_t page = FW_BASE;
 
+    // Don't reset the device while we are decrypting pages
+    IntMasterDisable();
+
     // Copy full chunks
     for (size_t i = 0; i < chunks; i++, page += FLASH_PAGESIZE) {
         // run AES
@@ -293,7 +297,6 @@ void decrypt_and_write_firmware(metadata* mdata) {
                    FLASH_PAGESIZE) != 0)
             reject();
 
-        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
 
     // Copy remaining bytes
@@ -308,9 +311,10 @@ void decrypt_and_write_firmware(metadata* mdata) {
         if (memcmp(firmware + (chunks * FLASH_PAGESIZE), (void*)(page),
                    FLASH_PAGESIZE) != 0)
             reject();
-
-        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
+
+    IntMasterEnable();
+    uart_write_str(UART2, "[FIRMWARE] Firmware installed.\n");
 }
 
 void load_initial_firmware(void) {
