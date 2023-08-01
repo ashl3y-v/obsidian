@@ -44,7 +44,7 @@ long program_flash(uint32_t, unsigned char*, unsigned int);
 #define UPDATE ((uint16_t)('U'))
 #define BOOT ((uint16_t)('B'))
 #define META ((uint16_t)('M'))
-#define CHUNK ((uint16_t)('C'))
+#define FIRM ((uint16_t)('C'))
 #define DONE ((uint16_t)('D'))
 #define FRAME_SIZE ((uint16_t)(256))
 
@@ -80,15 +80,16 @@ void init_interfaces() {
     load_initial_firmware();
 
     // Setup dialogue
-    uart_write_str(UART2, "Obsidian Update Interface\n");
+    uart_write_str(UART2, "Obsidian Bootloader Interface\n");
     uart_write_str(UART2,
-                   "Send \"U\" to update, and \"B\" to run the firmware.\n");
+                   "Send \"U\" to update and \"B\" to run the firmware.\n");
     uart_write_str(UART2,
-                   "Writing 0x20 to UART0 (space) will reset the device\n");
+                   "Writing 0x20 to UART0 (space) will reset the device.\n");
     uart_write_str(UART2, " ");
 }
 
 int main(void) {
+    // initialize UARTs
     init_interfaces();
 
     int read;
@@ -96,12 +97,14 @@ int main(void) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
         switch (request) {
         case UPDATE:
-            uart_write_str(UART2, "Received a request to update firmware.\n");
+            uart_write_str(UART2,
+                           "[UPDATE] Received a request to update firmware.\n");
             load_firmware();
             break;
 
         case BOOT:
-            uart_write_str(UART2, "Received a request to boot firmware.\n");
+            uart_write_str(UART2,
+                           "[BOOT] Received a request to boot firmware.\n");
             boot_firmware();
             break;
         }
@@ -130,13 +133,10 @@ void load_metadata(metadata* mdata) {
     uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&mdata->message_size),
                   sizeof(uint16_t));
 
-    // Debug information (remove before release)
-    //uart_write_str(UART2, "[METADATA] ECC signature: ");
-    //uart_write_hex_bytes(UART2, mdata->signature, SIGNATURE_SIZE);
-    //nl(UART2);
-
     uart_write_str(UART2, "[METADATA] Version: ");
 
+    // get metadata information and send to fw_update and debug
+    // get rid of debugging here?
     char buffer[5];
     itoa(mdata->version, buffer, 10);
     uart_write_str(UART2, buffer);
@@ -194,7 +194,7 @@ void load_firmware() {
     // An initalized context is needed for hash functions
     br_sha256_context sha256 = {0};
     br_sha256_init(&sha256);
-    //uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
+    // uart_write_str(UART2, "[FIRMWARE] Initalized SHA256 hash\n");
 
     // Update our SHA256 hash with our current metadata
     br_sha256_update(&sha256, &mdata.version, sizeof(uint16_t));
@@ -204,41 +204,38 @@ void load_firmware() {
     uint8_t hash[32] = {0};
     br_sha256_out(&sha256, hash);
 
-    //uart_write_str(UART2, "[FIRMWARE] SHA256 of metadata: ");
-    //uart_write_hex_bytes(UART2, hash, 32);
-    //nl(UART2);
-
     // Wait for firmware header to be sent
     int read;
     while (true) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
-        if (request == CHUNK)
+        if (request == FIRM)
             break;
     }
 
     // Acknowledge that we are about to receive firmware
-    uart_write_str(UART2, "[FIRMWARE] CHUNK packet received\n");
+    uart_write_str(UART2, "[FIRMWARE] FIRM packet received\n");
     uart_write(UART1, OK);
 
-    //...... whhhhoooooo here we go
+    // begin receiving firmware
     uint16_t frame_length = 0;
     uint32_t data_index = 0;
-    while (true)
-    {
+
+    while (true) {
         uart_write_str(UART2, "[FIRMWARE] Waiting for new frame.\n");
         uart_read_wrp(UART1, BLOCKING, &read, (uint8_t*)(&frame_length), 2);
         uart_write_str(UART2, "[FIRMWARE] Frame received\n");
 
         // Make sure we are't reading more than our frame size
         if (frame_length > FRAME_SIZE) {
-            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to "
+                                  "read firmware data.\n");
             reject();
         }
 
         // We aren't reading anymore data
         if (!frame_length) {
             uart_write(UART1, OK);
-            uart_write_str(UART2, "End of firmware reached.\n");
+            uart_write_str(UART2, "[FIRMWARE] End of firmware reached.\n");
             break;
         }
 
@@ -251,25 +248,26 @@ void load_firmware() {
         uart_write(UART1, OK);
     }
 
-    // more debug output
+    // calculate the hash
     br_sha256_out(&sha256, hash);
-    //uart_write_str(UART2, "[FIRMWARE] Calculated SHA256 Signature: ");
-    //uart_write_hex_bytes(UART2, hash, 32);
-    //nl(UART2);
 
+    // verify the hash with ECDSA and public key
     bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
                                         &mdata.signature, SIGNATURE_SIZE);
+
     if (!status)
         reject();
 
     uart_write_str(UART2, "[FIRMWARE] Updating firmware ...\n");
-    decrypt_firmware(&mdata);
+    decrypt_and_write_firmware(&mdata);
 
     uart_write(UART1, OK);
     uart_write_str(UART2, "[FIRMWARE] Ready to boot!\n");
 }
 
-void decrypt_firmware(metadata* mdata) {
+// decrypt firmware with AES and write to flash
+void decrypt_and_write_firmware(metadata* mdata) {
+    // initialization for AES
     const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
     br_aes_gen_cbcdec_keys v_dc;
     const br_block_cbcdec_class** dc;
@@ -283,41 +281,35 @@ void decrypt_firmware(metadata* mdata) {
 
     // Copy full chunks
     for (size_t i = 0; i < chunks; i++, page += FLASH_PAGESIZE) {
+        // run AES
         vd->run(dc, IV_KEY, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
-        if (program_flash(page, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE))
+
+        // check for errors
+        if (program_flash(page, firmware + (i * FLASH_PAGESIZE),
+                          FLASH_PAGESIZE))
             reject();
 
-        if (memcmp(firmware + (i * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
+        if (memcmp(firmware + (i * FLASH_PAGESIZE), (void*)(page),
+                   FLASH_PAGESIZE) != 0)
             reject();
 
-        //uart_write_hex_bytes(UART2, firmware + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
-        uart_write_str(UART2, "Page successfully programmed\nAddress: ");
-        uart_write_hex(UART2, page);
-        uart_write_str(UART2, "\nBytes: ");
-        uart_write_hex(UART2, FLASH_PAGESIZE);
-        nl(UART2);
+        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
 
     // Copy remaining bytes
     if (remainder > 0) {
-        vd->run(dc, IV_KEY, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE);
-        //uart_write_str(UART2, "[FIRMWARE] Decryption successful.\n");
-        //uart_write_hex(UART2, page);
-        //nl(UART2);
-        //uart_write_hex(UART2, firmware + (chunks * FLASH_PAGESIZE));
-        //nl(UART2);
-        if (program_flash(page, firmware + (chunks * FLASH_PAGESIZE), FLASH_PAGESIZE))
+        vd->run(dc, IV_KEY, firmware + (chunks * FLASH_PAGESIZE),
+                FLASH_PAGESIZE);
+
+        if (program_flash(page, firmware + (chunks * FLASH_PAGESIZE),
+                          FLASH_PAGESIZE))
             reject();
 
-        if (memcmp(firmware + (chunks * FLASH_PAGESIZE), (void*)(page), FLASH_PAGESIZE) != 0)
+        if (memcmp(firmware + (chunks * FLASH_PAGESIZE), (void*)(page),
+                   FLASH_PAGESIZE) != 0)
             reject();
 
-        //uart_write_hex_bytes(UART2, firmware + chunks * FLASH_PAGESIZE, FLASH_PAGESIZE);
-        uart_write_str(UART2, "Page successfully programmed\nAddress: ");
-        uart_write_hex(UART2, page);
-        uart_write_str(UART2, "\nBytes: ");
-        uart_write_hex(UART2, remainder);
-        nl(UART2);
+        uart_write_str(UART2, "[FIRMWARE] Page successfully programmed.\n");
     }
 }
 
@@ -328,6 +320,7 @@ void load_initial_firmware(void) {
 
     // Create buffers for saving the release message
     uint8_t temp_buf[FLASH_PAGESIZE];
+    // sus release message
     char initial_msg[] = "ඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞ";
     uint16_t msg_len = strlen(initial_msg) + 1;
     uint16_t rem_msg_bytes;
@@ -342,7 +335,6 @@ void load_initial_firmware(void) {
     program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
 
     int i;
-
     for (i = 0; i < size / FLASH_PAGESIZE; i++) {
         program_flash(FW_BASE + (i * FLASH_PAGESIZE),
                       initial_data + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);

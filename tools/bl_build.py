@@ -9,18 +9,21 @@ import argparse
 import os
 import pathlib
 import shutil
+
+from subprocess import run, call
 from util import arrayize
 
 from Crypto.PublicKey import ECC
 from Crypto.Random import get_random_bytes
-from subprocess import run, call
 
+# various project directories
 ROOT_DIR = pathlib.Path(__file__).parent.parent.absolute()
 TOOL_DIR = pathlib.Path(__file__).parent.absolute()
 FIRMWARE_DIR = ROOT_DIR / "firmware"
 BOOTLOADER_DIR = ROOT_DIR / "bootloader"
 CRYPTO_DIR = BOOTLOADER_DIR / "crypto"
 
+# errors which can be thrown
 SECRET_ERROR = -1
 FIRMWARE_ERROR = -2
 
@@ -32,11 +35,11 @@ def copy_initial_firmware(binary_path):
     # Copy generated firmware to build directory
     try:
         shutil.copy(binary_path, BOOTLOADER_DIR / "src/firmware.bin")
-    except Exception as excep:
-        # print(f"{excep}")
+    except Exception:
         exit(FIRMWARE_ERROR)
 
 
+# compile the bootloader
 def make_bootloader(**keys) -> bool:
     # Navigate to bootloader directory
     os.chdir(BOOTLOADER_DIR)
@@ -44,16 +47,16 @@ def make_bootloader(**keys) -> bool:
     # Delete any previous executables and compile
     run("make clean", shell=True)
 
-    # Create a make command incluidng all the keys passed
+    # Create a make command including all the keys passed
     command = "make "
     variables = [f"{x}='{arrayize(y)}'" for x, y in keys.items()]
     for variable in variables:
-        # print(variable)
         command += variable + " "
 
     # Call the make command
     call("make clean", shell=True)
     status = call(command, shell=True)
+
     if status == 0:
         print(f"Compiled binary located at {BOOTLOADER_DIR}")
     else:
@@ -69,7 +72,8 @@ def generate_secrets():
         aes = get_random_bytes(32)
         iv = get_random_bytes(16)
 
-        # ECC key pair generation
+        # ECC key pair generation, curve is NIST P-256
+        # export the public key
         ecc_private = ECC.generate(curve="secp256r1")
         ecc_public = ecc_private.public_key()
         exported_public = ecc_public.export_key(format="raw")
@@ -78,7 +82,7 @@ def generate_secrets():
         if not os.path.exists(CRYPTO_DIR):
             os.mkdir(CRYPTO_DIR)
 
-        # Write our AES and ECC private key and close for safety
+        # Write our AES and ECC private key
         with open(CRYPTO_DIR / "secret_build_output.txt", mode="wb") as file:
             file.write(aes)
             file.write(bytes(ecc_private.export_key(format="PEM").encode()))
@@ -101,8 +105,8 @@ def generate_secrets():
 
             file.write(b"// Size constants\n")
             file.write(b"#define MAX_VERSION 65535\n")
-            file.write(b"#define MAX_MESSAGE_SIZE 1024\n")
-            file.write(b"#define MAX_FIRMWARE_SIZE 32768\n")
+            file.write(b"#define MAX_MESSAGE_SIZE 1000\n")
+            file.write(b"#define MAX_FIRMWARE_SIZE 30000\n")
             file.write(b"#define AES_KEY_LENGTH 32\n")
             file.write(b"#define IV_KEY_LENGTH 16\n")
             file.write(b"#define ECC_KEY_LENGTH 65\n\n")
