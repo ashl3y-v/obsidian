@@ -26,13 +26,8 @@ Members: Anna, Ashley, Noah, Riley
 
 # update tool 
 ## run
-./fw_update --port <serial port> --firmware <filename_of_protected_firmware>
+./fw_update --firmware <filename_of_protected_firmware>
 
-# old docs
-## running the insecure example
-
-1. build the firmware by navigating to `firmware/firmware`, and running `make`.
-2. build the bootloader by navigating to `tools`, and running `python bl_build.py`
 
 ## troubleshooting
 
