@@ -2,15 +2,9 @@
 Team Obsidian - BWSI Design Challenge 2023
 Members: Anna, Ashley, Noah, Riley
 
-# goals
-* Bootloader
-* Host tools
-  * Bootloader - build tool - Noah
-  * Bootloader - emulate tool - Riley
-  * Firmware - bundle and protect tool - Ashley
-  * Firmware - update tool - Anna
-
-# to do
+# encryption and signing
+AES-CBC-256
+ECDSA with P-256r
 
 # build tool
 ## run
@@ -27,7 +21,6 @@ Members: Anna, Ashley, Noah, Riley
 # update tool 
 ## run
 ./fw_update --firmware <filename_of_protected_firmware>
-
 
 ## troubleshooting
 
