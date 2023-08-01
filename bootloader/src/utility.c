@@ -1,6 +1,8 @@
 #include "utility.h"
 
 #define ERROR (uint8_t)('E')
+
+// This function is called whenever the device fails some part of the update process
 void reject()
 {
     // Re-enable interrupts if they were disabled
@@ -40,6 +42,8 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t* start, uint32_t len) {
 
 void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t bytes)
 {
+    // Hope that the out variable is a valid pointer and read a byte
+    // UART register only holds up to a byte so we have to repeat this operation X times
     for (int i = 0; i < bytes; ++i) {
         volatile uint8_t data = uart_read(uart, blocking , read);
         memcpy(out + i, (uint8_t*)(&data), 1);
@@ -48,6 +52,7 @@ void uart_read_wrp(uint8_t uart, int blocking, int* read, uint8_t* out, size_t b
 
 void uart_write_wrp(uint8_t uart, uint8_t* in, size_t bytes)
 {
+    // Same thing as uart_read_wrp except we write...
     for (int i = 0; i < bytes; ++i) {
         volatile uint8_t data = {0};
         memcpy(&data, in + i, 1);
