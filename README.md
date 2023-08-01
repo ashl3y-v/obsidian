@@ -1,27 +1,26 @@
-# obsidian
-Team Obsidian - BWSI Design Challenge 2023
-Members: Anna, Ashley, Noah, Riley
+# OBSIDIAN
 
 # encryption and signing
 AES-CBC-256
 ECDSA with P-256r
 
-# build tool
-## run
-./bl_build --initial-firmware <firmware_binary>
+## Setup
+Download the code to your machine using:
+```$ git clone https://github.com/ash-v3/obsidian.git```
 
-# emulate tool
-## run
-./bl_emulate --boot-path <bootloader_binary> [--debug]
+Make sure PyCryptodome is running the latest version as some of the cryptographic functionality used in this repo was added in later versions.
 
-# bundle and protect tool
-## run
-./fw_protect --infile <unprotected_firmware_filename> --version <version_number> --message <release_message> --outfile <protected_firmware_output_filename>
+```$ python -m pip install -U pycryptodome```
 
-# update tool 
-## run
-./fw_update --firmware <filename_of_protected_firmware>
+### Steps
+ ``[]`` indicates required arguments, ``<>`` indicates optional arguments.
+ - Provide a firmware to be compiled with (optional) or automatically build the initial firmware with the bootloader.
+	``$ cd tools``
+	``$ python bl_build.py --initial-firmware <firmware>``
+ - Protect a firmware
+   ``$ python fw_protect.py --infile [infile] --outfile [outfile] --version [version] --message [message]``
 
-## troubleshooting
-
-Ensure that BearSSL is compiled for the stellaris: `cd ~/lib/BearSSL && make CONF=../../stellaris/bearssl/stellaris clean && make CONF=../../stellaris/bearssl/stellaris`
+## Design Implementations
+AES-CBC-256  
+ECDSA with P-256 curve  
+Frame size is 256
