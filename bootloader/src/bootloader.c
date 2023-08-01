@@ -97,12 +97,14 @@ int main(void) {
         uint16_t request = uart_read(UART1, BLOCKING, &read);
         switch (request) {
         case UPDATE:
-            uart_write_str(UART2, "[UPDATE] Received a request to update firmware.\n");
+            uart_write_str(UART2,
+                           "[UPDATE] Received a request to update firmware.\n");
             load_firmware();
             break;
 
         case BOOT:
-            uart_write_str(UART2, "[BOOT] Received a request to boot firmware.\n");
+            uart_write_str(UART2,
+                           "[BOOT] Received a request to boot firmware.\n");
             boot_firmware();
             break;
         }
@@ -225,7 +227,8 @@ void load_firmware() {
 
         // Make sure we are't reading more than our frame size
         if (frame_length > FRAME_SIZE) {
-            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to read firmware data.\n");
+            uart_write_str(UART2, "[FIRMWARE] Something went wrong trying to "
+                                  "read firmware data.\n");
             reject();
         }
 
@@ -249,7 +252,8 @@ void load_firmware() {
     br_sha256_out(&sha256, hash);
 
     // verify the hash with ECDSA and public key
-    bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC, &mdata.signature, SIGNATURE_SIZE);
+    bool status = br_ecdsa_i31_vrfy_raw(&br_ec_p256_m31, hash, 32, &EC_PUBLIC,
+                                        &mdata.signature, SIGNATURE_SIZE);
 
     if (!status)
         reject();
@@ -342,7 +346,8 @@ void load_initial_firmware(void) {
         program_flash(FW_BASE + (i * FLASH_PAGESIZE), (uint8_t*)initial_msg,
                       msg_len);
     } else {
-        // Some firmware left. Determine how many bytes of release message can fit
+        // Some firmware left. Determine how many bytes of release message can
+        // fit
         if (msg_len > (FLASH_PAGESIZE - rem_fw_bytes)) {
             rem_msg_bytes = msg_len - (FLASH_PAGESIZE - rem_fw_bytes);
         } else {

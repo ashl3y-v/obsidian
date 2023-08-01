@@ -104,8 +104,8 @@ def generate_secrets():
 
             file.write(b"// Size constants\n")
             file.write(b"#define MAX_VERSION 65535\n")
-            file.write(b"#define MAX_MESSAGE_SIZE 1024\n")
-            file.write(b"#define MAX_FIRMWARE_SIZE 32768\n")
+            file.write(b"#define MAX_MESSAGE_SIZE 1000\n")
+            file.write(b"#define MAX_FIRMWARE_SIZE 30000\n")
             file.write(b"#define AES_KEY_LENGTH 32\n")
             file.write(b"#define IV_KEY_LENGTH 16\n")
             file.write(b"#define ECC_KEY_LENGTH 65\n\n")
