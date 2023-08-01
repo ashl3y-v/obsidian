@@ -51,9 +51,6 @@ def make_bootloader(**keys) -> bool:
         # print(variable)
         command += variable + " "
 
-    # Error checking
-    # print(f"command: \n\t{command}")
-
     # Call the make command
     call("make clean", shell=True)
     status = call(command, shell=True)
@@ -77,6 +74,7 @@ def generate_secrets():
         ecc_public = ecc_private.public_key()
         exported_public = ecc_public.export_key(format="raw")
 
+        # Make a crypto folder if it doesn't exist already
         if not os.path.exists(CRYPTO_DIR):
             os.mkdir(CRYPTO_DIR)
 
@@ -93,8 +91,7 @@ def generate_secrets():
         with open(CRYPTO_DIR / "iv.txt", mode="wb") as file:
             file.write(iv)
 
-        # Write to the secrets file
-        # Temporary (but ugly) fix because Makefile command line constants are not working
+        # Makefile command line constants don't work so we opted to use a header file
         with open(CRYPTO_DIR / "secrets.h", mode="wb") as file:
             file.write(b"#ifndef SECRETS_H\n")
             file.write(b"#define SECRETS_H\n\n")
@@ -134,7 +131,6 @@ def generate_secrets():
 def main(args):
     # Build and use default firmware if none is provided,
     # otherwise look for the binary at the path specified
-    # print("args: ", args.initial_firmware)
     if args.initial_firmware is None:
         binary_path = FIRMWARE_DIR / "gcc" / "main.bin"
         os.chdir(FIRMWARE_DIR)
@@ -158,7 +154,7 @@ def main(args):
     # Move the initial firmware
     copy_initial_firmware(binary_path)
 
-    # Run make commands
+    # Run make commands (we couldn't get Makefile constants to work so the kwargs is actually useless..)
     make_bootloader(**secrets)
 
 
