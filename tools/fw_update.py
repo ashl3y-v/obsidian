@@ -54,10 +54,6 @@ def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack("<HH", metadata[64:68])
     print(f"\tVersion: {version}\n\tSize: {size} bytes")
 
-    # Prevent debug abuse
-    if version == 0 and not debug:
-        raise RuntimeError("Invalid version request, aborting.")
-
     # Handshake with bootloader to send metadata
     ser.write(META)
     if debug:
