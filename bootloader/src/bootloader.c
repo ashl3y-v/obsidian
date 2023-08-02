@@ -325,7 +325,7 @@ void load_initial_firmware(void) {
     // Create buffers for saving the release message
     uint8_t temp_buf[FLASH_PAGESIZE];
     // sus release message
-    char initial_msg[] = "ඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞඞ";
+    char initial_msg[] = "This is the initial release message.";
     uint16_t msg_len = strlen(initial_msg) + 1;
     uint16_t rem_msg_bytes;
 
